@@ -131,6 +131,16 @@ service cloud.firestore {
       }
 
       // ----- Cumpleaños -----
+      // Encargado del mes (tipo ticket): la pastora asigna; el diácono encargado solo marca a quién felicitó.
+      match /cumpleEncargos/{mes} {
+        allow read: if equipo(ig, 50);
+        allow create, delete: if equipo(ig, 80);
+        allow update: if equipo(ig, 80) || (
+          equipo(ig, 50)
+          && resource.data.diaconoUid == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['hechos', 'estado', 'actualizado'])
+        );
+      }
       match /cumpleanos/{id} {
         allow read, update: if equipo(ig, 50);
         allow delete: if equipo(ig, 80);

@@ -10,7 +10,7 @@ Hecha para **Ministerio Jesucristo Imperio de Vida**, preparada para que más ad
 | Módulo | Estado | Qué hace |
 |---|---|---|
 | Lectura Bíblica | ✅ | Plan de 6 meses, banner para WhatsApp, link público para ver la lectura y suscribirse, correo diario |
-| Cumpleaños | ✅ | Próximos, calendario, registros, banner con foto, link público de registro (persona + hijos + foto), exportar |
+| Cumpleaños | ✅ | Próximos, calendario, registros, banner con foto, link público de registro (persona + hijos + foto), **encargado del mes tipo ticket** (la pastora asigna, cada banner enviado marca al cumpleañero), exportar |
 | Finanzas | ✅ | Aportes de los diáconos (luz, alquiler, mantenimiento…), gastos con campos libres, estado de cuenta, **importar los Excel que ya usan** (.xlsx, .xls, .ods o .csv; primero pregunta si van a Finanzas, a un Proyecto o al Inventario, sin duplicar) y descargar |
 | Eventos | ✅ | Próximos, calendario mensual, responsables, tareas, banner, link de inscripción con cupo y lista de inscritos |
 | Anuncios | ✅ | Tablero informativo, anuncios con imagen y vigencia, banner, link público del tablero, suscripción a avisos y envío por correo |
@@ -102,3 +102,11 @@ Crea cuenta gratis en https://cloudinary.com → *Settings → Upload → Upload
 - Sábado y domingo se muestra "Día para ponerte al día" con el resumen de la semana.
 - Un diácono puede reemplazar la lectura de cualquier día (escribiéndola o con el selector de libro/capítulo/versículo) y añadir una nota o versículo. Los hermanos eligen en qué versión leer.
 - El banner se genera en el navegador (canvas) en 3 formatos (cuadrado, vertical, estado de WhatsApp) y 3 diseños, con 8 fondos incluidos, fotos del banco de la iglesia o una foto propia (que no se sube a ningún servidor). En el celular el botón *Compartir en WhatsApp* envía la imagen directamente.
+
+### Banners
+
+Todos los banners (lectura, anuncios, eventos y cumpleaños) permiten cambiar el color de cada texto (y el borde de la foto en cumpleaños). Los colores elegidos se recuerdan en el dispositivo por módulo.
+
+### Vista previa de los links
+
+Al compartir un link público (`/p/...`) por WhatsApp, la vista previa dice de qué se trata (registro de cumpleaños, lectura diaria, inscripción al evento…). Lo arma `api/vista-link.ts`, que necesita `FIREBASE_SERVICE_ACCOUNT` en Vercel.

@@ -3,7 +3,8 @@ import { Copy, Download, ImagePlus, MessageCircle, Share2 } from 'lucide-react';
 import { useSesion } from '../../lib/sesion';
 import { registrarBanner } from '../../lib/almacen';
 import { FONDOS, fondoPorId, type Fondo } from './fondos';
-import { FORMATOS, cargarImagen, dibujarBanner, type Formato, type Plantilla, FUENTE_TEXTO, FUENTE_TITULO } from './dibujarBanner';
+import { FORMATOS, cargarImagen, coloresPorDefectoBanner, dibujarBanner, type Formato, type Plantilla, FUENTE_TEXTO, FUENTE_TITULO } from './dibujarBanner';
+import { ColoresTexto, useColoresGuardados, type ParteColor } from './ColoresTexto';
 import type { ImagenBanco } from './useLectura';
 
 export interface DatosBanner {
@@ -68,6 +69,7 @@ export function GeneradorBanner({ inicial, pie, imagenesBanco, textoMensaje, nom
   const [temaFoto, setTemaFoto] = useState<'claro' | 'oscuro'>('claro');
   const [oscurecer, setOscurecer] = useState(0.25);
   const [conLogo, setConLogo] = useState(true);
+  const [colores, setColores] = useColoresGuardados(moduloHistorial);
   const [aviso, setAviso] = useState('');
   const [error, setError] = useState('');
 
@@ -118,13 +120,30 @@ export function GeneradorBanner({ inicial, pie, imagenesBanco, textoMensaje, nom
         iglesia: iglesia.nombre,
         pie,
         logo,
+        colores,
         ...datos,
       });
     })();
     return () => {
       cancelado = true;
     };
-  }, [datos, formato, plantilla, fondoSel, fotoPropia, temaFoto, oscurecer, conLogo, iglesia, pie, imagenesBanco, w, h, separarComas]);
+  }, [datos, formato, plantilla, fondoSel, fotoPropia, temaFoto, oscurecer, conLogo, iglesia, pie, imagenesBanco, w, h, separarComas, colores]);
+
+  const temaActual = fondoSel.startsWith('proc:') ? fondoPorId(fondoSel.slice(5)).tema : temaFoto;
+  const defectos = coloresPorDefectoBanner(temaActual, plantilla, iglesia.colorAcento);
+  const partesColor: ParteColor[] = (
+    [
+      ['iglesia', 'Nombre de la iglesia', true],
+      ['etiqueta', etiquetas.etiqueta ?? 'Encabezado', !!datos.etiqueta],
+      ['titulo', etiquetas.titulo ?? 'Título', !!datos.titulo],
+      ['lectura', etiquetas.lectura ?? 'Lectura', !!datos.lectura],
+      ['nota', etiquetas.nota ?? 'Nota o versículo', !!datos.nota],
+      ['fecha', etiquetas.fecha ?? 'Fecha', !!datos.fecha],
+      ['pie', 'Pie (web o redes)', !!pie],
+    ] as const
+  )
+    .filter(([, , ver]) => ver)
+    .map(([id, nombre]) => ({ id, nombre, defecto: defectos[id] }));
 
   const mensaje = useMemo(() => textoMensaje(datos), [datos, textoMensaje]);
 
@@ -286,6 +305,7 @@ export function GeneradorBanner({ inicial, pie, imagenesBanco, textoMensaje, nom
             <span>Mostrar logo de la iglesia</span>
           </label>
         )}
+        <ColoresTexto partes={partesColor} valores={colores} alCambiar={setColores} />
 
         <h3>Textos</h3>
         <label>

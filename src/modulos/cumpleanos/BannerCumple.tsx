@@ -7,10 +7,11 @@ import { FORMATOS, cargarImagen, type Formato } from '../lectura/dibujarBanner';
 import { MiniFondo, cargarFuentes } from '../lectura/GeneradorBanner';
 import { useLectura } from '../lectura/useLectura';
 import { numeroWhatsApp } from '../lectura/suscriptores';
-import { dibujarCumple } from './dibujarCumple';
+import { coloresPorDefectoCumple, dibujarCumple } from './dibujarCumple';
+import { ColoresTexto, useColoresGuardados } from '../lectura/ColoresTexto';
 import { mensajeFelicitacion, textoFecha, type Cumple } from './datos';
 
-export function BannerCumple({ persona }: { persona: Cumple }) {
+export function BannerCumple({ persona, alEnviar }: { persona: Cumple; alEnviar?: () => void }) {
   const { iglesia, perfil } = useSesion();
   const { config } = useLectura();
   const ref = useRef<HTMLCanvasElement>(null);
@@ -24,6 +25,7 @@ export function BannerCumple({ persona }: { persona: Cumple }) {
   const [fecha, setFecha] = useState(textoFecha(persona));
   const [mensaje, setMensaje] = useState('Que el Señor te bendiga y te guarde. Números 6:24');
   const [error, setError] = useState('');
+  const [colores, setColores] = useColoresGuardados('cumpleanos');
 
   useEffect(() => {
     setNombre(persona.nombre);
@@ -50,12 +52,27 @@ export function BannerCumple({ persona }: { persona: Cumple }) {
       const urlFoto = fotoPersona || persona.foto;
       const foto = urlFoto ? await cargarImagen(urlFoto).catch(() => null) : null;
       if (cancelado) return;
-      dibujarCumple(ctx, { w, h, fondo, oscurecer, foto, colorAcento: iglesia.colorAcento, iglesia: iglesia.nombre, titulo, nombre, fecha, mensaje, pie: config.pieBanner });
+      if (urlFoto && !foto) setError('No se pudo cargar la foto guardada en el registro. Mientras tanto usa "Usar otra foto".');
+      else if (foto) setError('');
+      dibujarCumple(ctx, { w, h, fondo, oscurecer, foto, colorAcento: iglesia.colorAcento, iglesia: iglesia.nombre, titulo, nombre, fecha, mensaje, pie: config.pieBanner, colores });
     })().catch(() => setError('No se pudo cargar una de las imágenes.'));
     return () => {
       cancelado = true;
     };
-  }, [w, h, fondoSel, fotoFondo, fotoPersona, oscurecer, titulo, nombre, fecha, mensaje, persona, iglesia, config]);
+  }, [w, h, fondoSel, fotoFondo, fotoPersona, oscurecer, titulo, nombre, fecha, mensaje, persona, iglesia, config, colores]);
+
+  const defectos = coloresPorDefectoCumple(iglesia.colorAcento);
+  const partesColor = (
+    [
+      ['iglesia', 'Nombre de la iglesia'],
+      ['titulo', 'Título'],
+      ['aro', 'Borde de la foto'],
+      ['nombre', 'Nombre'],
+      ['fecha', 'Fecha'],
+      ['mensaje', 'Mensaje o versículo'],
+      ['pie', 'Pie (web o redes)'],
+    ] as const
+  ).map(([id, nombre]) => ({ id, nombre, defecto: defectos[id] }));
 
   const archivo = () =>
     new Promise<File>((ok, mal) => {
@@ -83,6 +100,7 @@ export function BannerCumple({ persona }: { persona: Cumple }) {
 
   function historial() {
     if (ref.current) void registrarBanner(ref.current, 'cumpleanos', `Cumpleaños: ${nombre}`, perfil).catch((e) => console.warn('historial banner', e));
+    alEnviar?.();
   }
 
   async function compartir() {
@@ -164,6 +182,7 @@ export function BannerCumple({ persona }: { persona: Cumple }) {
             <input type="range" min={0} max={0.8} step={0.05} value={oscurecer} onChange={(e) => setOscurecer(Number(e.target.value))} />
           </label>
         </div>
+        <ColoresTexto partes={partesColor} valores={colores} alCambiar={setColores} />
         <h3>Textos</h3>
         <label>
           Título

@@ -14,6 +14,22 @@ export interface OpcionesCumple {
   fecha: string;
   mensaje: string;
   pie: string;
+  /** Colores elegidos para cada texto (lo que falte usa el color automático). */
+  colores?: Partial<Record<ParteCumple, string>>;
+}
+
+export type ParteCumple = 'iglesia' | 'titulo' | 'aro' | 'nombre' | 'fecha' | 'mensaje' | 'pie';
+
+export function coloresPorDefectoCumple(colorAcento: string): Record<ParteCumple, string> {
+  return {
+    iglesia: '#ffffff',
+    titulo: colorAcento,
+    aro: colorAcento,
+    nombre: '#ffffff',
+    fecha: colorAcento,
+    mensaje: 'rgba(255,255,255,0.92)',
+    pie: 'rgba(255,255,255,0.85)',
+  };
 }
 
 function cubrir(ctx: CanvasRenderingContext2D, img: HTMLImageElement, x: number, y: number, w: number, h: number) {
@@ -65,6 +81,7 @@ export function dibujarCumple(ctx: CanvasRenderingContext2D, o: OpcionesCumple) 
     ctx.fillRect(0, 0, w, h);
   }
   confeti(ctx, w, h, o.colorAcento);
+  const col = { ...coloresPorDefectoCumple(o.colorAcento), ...o.colores };
 
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
@@ -78,7 +95,7 @@ export function dibujarCumple(ctx: CanvasRenderingContext2D, o: OpcionesCumple) 
   let y = h * 0.055;
   ctx.save();
   sombra();
-  ctx.fillStyle = '#fff';
+  ctx.fillStyle = col.iglesia;
   ctx.font = `600 ${Math.round(w * 0.027)}px ${FUENTE_TEXTO}`;
   ctx.fillText(o.iglesia.toUpperCase(), w / 2, y, w * 0.9);
   ctx.restore();
@@ -87,7 +104,7 @@ export function dibujarCumple(ctx: CanvasRenderingContext2D, o: OpcionesCumple) 
   // Título
   ctx.save();
   sombra();
-  ctx.fillStyle = o.colorAcento;
+  ctx.fillStyle = col.titulo;
   ctx.font = `italic 700 ${Math.round(w * 0.095)}px ${FUENTE_TITULO}`;
   ctx.fillText(o.titulo, w / 2, y, w * 0.92);
   ctx.restore();
@@ -102,7 +119,7 @@ export function dibujarCumple(ctx: CanvasRenderingContext2D, o: OpcionesCumple) 
   ctx.shadowBlur = 30;
   ctx.beginPath();
   ctx.arc(cx, cy, radio + w * 0.014, 0, Math.PI * 2);
-  ctx.fillStyle = o.colorAcento;
+  ctx.fillStyle = col.aro;
   ctx.fill();
   ctx.restore();
   ctx.save();
@@ -128,7 +145,7 @@ export function dibujarCumple(ctx: CanvasRenderingContext2D, o: OpcionesCumple) 
   // Nombre
   ctx.save();
   sombra();
-  ctx.fillStyle = '#fff';
+  ctx.fillStyle = col.nombre;
   let t = w * 0.085;
   ctx.font = `800 ${Math.round(t)}px ${FUENTE_TEXTO}`;
   let lineas = partir(ctx, o.nombre, w * 0.86);
@@ -141,14 +158,14 @@ export function dibujarCumple(ctx: CanvasRenderingContext2D, o: OpcionesCumple) 
   y += lineas.length * t * 1.1 + w * 0.015;
 
   // Fecha
-  ctx.fillStyle = o.colorAcento;
+  ctx.fillStyle = col.fecha;
   ctx.font = `700 ${Math.round(w * 0.036)}px ${FUENTE_TEXTO}`;
   ctx.fillText(o.fecha.toUpperCase(), w / 2, y);
   y += w * 0.065;
 
   // Mensaje
   if (o.mensaje) {
-    ctx.fillStyle = 'rgba(255,255,255,0.92)';
+    ctx.fillStyle = col.mensaje;
     const tm = w * 0.037;
     ctx.font = `italic 400 ${Math.round(tm)}px ${FUENTE_TITULO}`;
     partir(ctx, o.mensaje, w * 0.82)
@@ -160,7 +177,7 @@ export function dibujarCumple(ctx: CanvasRenderingContext2D, o: OpcionesCumple) 
   if (o.pie) {
     ctx.save();
     sombra();
-    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.fillStyle = col.pie;
     ctx.font = `500 ${Math.round(w * 0.024)}px ${FUENTE_TEXTO}`;
     ctx.fillText(o.pie, w / 2, h - h * 0.05);
     ctx.restore();

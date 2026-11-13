@@ -125,8 +125,8 @@ export function Importar({ d }: { d: Datos }) {
     () => (hoja ? procesarHoja(hoja, { tipo, filaEncabezado: filaEnc, mapeo, conceptoFijo, anio, cuotaMensual: Number(cuota) || 0 }) : []),
     [hoja, tipo, filaEnc, mapeo, conceptoFijo, anio, cuota],
   );
-  const validas = filas.filter((f) => !f.error);
-  const conErrores = filas.filter((f) => f.error);
+  const validas = useMemo(() => filas.filter((f) => !f.error), [filas]);
+  const conErrores = useMemo(() => filas.filter((f) => f.error), [filas]);
 
   // Nombres de Excel que un pastor ya vinculó a una cuenta.
   const vinculos = useMemo(() => {

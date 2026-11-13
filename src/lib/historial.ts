@@ -34,6 +34,7 @@ const MODULO_POR_COLECCION: Record<string, string> = {
   lecturaAjustes: 'lectura',
   suscriptores: 'lectura',
   cumpleanos: 'cumpleanos',
+  cumpleEncargos: 'cumpleanos',
   finConceptos: 'finanzas',
   finCargos: 'finanzas',
   finPagos: 'finanzas',

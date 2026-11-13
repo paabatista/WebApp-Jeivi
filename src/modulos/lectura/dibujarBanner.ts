@@ -29,6 +29,26 @@ export interface OpcionesBanner {
   logo?: HTMLImageElement | null;
   /** Poner cada elemento separado por coma en su propia línea (citas bíblicas). */
   separarComas?: boolean;
+  /** Colores elegidos para cada texto (lo que falte usa el color automático). */
+  colores?: Partial<Record<ParteBanner, string>>;
+}
+
+export type ParteBanner = 'iglesia' | 'etiqueta' | 'titulo' | 'lectura' | 'nota' | 'fecha' | 'pie';
+
+/** Colores automáticos de cada texto según el fondo (claro/oscuro) y el diseño. */
+export function coloresPorDefectoBanner(tema: 'claro' | 'oscuro', plantilla: Plantilla, colorAcento: string): Record<ParteBanner, string> {
+  const enTarjeta = plantilla === 'tarjeta';
+  const texto = enTarjeta ? '#24152f' : tema === 'claro' ? '#ffffff' : '#3a2410';
+  const suave = enTarjeta ? 'rgba(36,21,47,0.7)' : tema === 'claro' ? 'rgba(255,255,255,0.85)' : 'rgba(58,36,16,0.75)';
+  return {
+    iglesia: enTarjeta ? (tema === 'claro' ? '#ffffff' : '#3a2410') : texto,
+    etiqueta: colorAcento,
+    titulo: enTarjeta ? colorAcento : texto,
+    lectura: texto,
+    nota: suave,
+    fecha: suave,
+    pie: tema === 'claro' ? 'rgba(255,255,255,0.8)' : 'rgba(58,36,16,0.7)',
+  };
 }
 
 function cubrir(ctx: CanvasRenderingContext2D, img: HTMLImageElement, w: number, h: number) {
@@ -101,8 +121,7 @@ export function dibujarBanner(ctx: CanvasRenderingContext2D, o: OpcionesBanner) 
   }
 
   const enTarjeta = o.plantilla === 'tarjeta';
-  const colorTexto = enTarjeta ? '#24152f' : tema === 'claro' ? '#ffffff' : '#3a2410';
-  const colorSuave = enTarjeta ? 'rgba(36,21,47,0.7)' : tema === 'claro' ? 'rgba(255,255,255,0.85)' : 'rgba(58,36,16,0.75)';
+  const col = { ...coloresPorDefectoBanner(tema, o.plantilla, o.colorAcento), ...o.colores };
   const sombra = !enTarjeta && tema === 'claro';
   const alinear: CanvasTextAlign = o.plantilla === 'minimal' ? 'left' : 'center';
 
@@ -130,7 +149,7 @@ export function dibujarBanner(ctx: CanvasRenderingContext2D, o: OpcionesBanner) 
     yCab += lado * (o.logo.naturalHeight / o.logo.naturalWidth || 1) + h * 0.015;
   }
   ctx.textAlign = alinear;
-  ctx.fillStyle = enTarjeta ? (tema === 'claro' ? '#fff' : '#3a2410') : colorTexto;
+  ctx.fillStyle = col.iglesia;
   ctx.font = `600 ${Math.round(w * 0.027)}px ${FUENTE_TEXTO}`;
   try {
     (ctx as CanvasRenderingContext2D & { letterSpacing: string }).letterSpacing = `${Math.round(w * 0.004)}px`;
@@ -156,7 +175,7 @@ export function dibujarBanner(ctx: CanvasRenderingContext2D, o: OpcionesBanner) 
       alto: t * 1.3,
       pintar: (y) => {
         ctx.font = `700 ${Math.round(t)}px ${FUENTE_TEXTO}`;
-        ctx.fillStyle = o.colorAcento;
+        ctx.fillStyle = col.etiqueta;
         conSombra(() => ctx.fillText(o.etiqueta.toUpperCase(), xTexto, y));
       },
     });
@@ -168,7 +187,7 @@ export function dibujarBanner(ctx: CanvasRenderingContext2D, o: OpcionesBanner) 
       alto: t * 1.25,
       pintar: (y) => {
         ctx.font = `italic 700 ${Math.round(t)}px ${FUENTE_TITULO}`;
-        ctx.fillStyle = enTarjeta ? o.colorAcento : colorTexto;
+        ctx.fillStyle = col.titulo;
         conSombra(() => ctx.fillText(o.titulo, xTexto, y));
       },
     });
@@ -190,7 +209,7 @@ export function dibujarBanner(ctx: CanvasRenderingContext2D, o: OpcionesBanner) 
     alto: lineas.length * tamano * 1.12,
     pintar: (y) => {
       ctx.font = `800 ${Math.round(tamano)}px ${FUENTE_TEXTO}`;
-      ctx.fillStyle = colorTexto;
+      ctx.fillStyle = col.lectura;
       conSombra(() => lineas.forEach((l, i) => ctx.fillText(l, xTexto, y + i * tamano * 1.12)));
     },
   });
@@ -201,7 +220,7 @@ export function dibujarBanner(ctx: CanvasRenderingContext2D, o: OpcionesBanner) 
       alto: res.lineas.length * res.tamano * 1.35,
       pintar: (y) => {
         ctx.font = `italic 400 ${Math.round(res.tamano)}px ${FUENTE_TITULO}`;
-        ctx.fillStyle = colorSuave;
+        ctx.fillStyle = col.nota;
         conSombra(() => res.lineas.forEach((l, i) => ctx.fillText(l, xTexto, y + i * res.tamano * 1.35)));
       },
     });
@@ -213,7 +232,7 @@ export function dibujarBanner(ctx: CanvasRenderingContext2D, o: OpcionesBanner) 
       alto: t * 1.3,
       pintar: (y) => {
         ctx.font = `500 ${Math.round(t)}px ${FUENTE_TEXTO}`;
-        ctx.fillStyle = colorSuave;
+        ctx.fillStyle = col.fecha;
         conSombra(() => ctx.fillText(o.fecha, xTexto, y));
       },
     });
@@ -248,19 +267,32 @@ export function dibujarBanner(ctx: CanvasRenderingContext2D, o: OpcionesBanner) 
   if (o.pie) {
     const t = w * 0.024;
     ctx.font = `500 ${Math.round(t)}px ${FUENTE_TEXTO}`;
-    ctx.fillStyle = tema === 'claro' ? 'rgba(255,255,255,0.8)' : 'rgba(58,36,16,0.7)';
+    ctx.fillStyle = col.pie;
     ctx.textAlign = alinear;
     conSombra(() => ctx.fillText(o.pie, xTexto, h - h * 0.055));
   }
   ctx.restore();
 }
 
-export function cargarImagen(src: string): Promise<HTMLImageElement> {
+function cargarDirecto(src: string): Promise<HTMLImageElement> {
   return new Promise((ok, mal) => {
     const img = new Image();
-    if (!src.startsWith('blob:') && !src.startsWith('data:')) img.crossOrigin = 'anonymous';
+    if (!src.startsWith('blob:') && !src.startsWith('data:') && !src.startsWith('/')) img.crossOrigin = 'anonymous';
     img.onload = () => ok(img);
     img.onerror = () => mal(new Error('No se pudo cargar la imagen'));
     img.src = src;
   });
+}
+
+/**
+ * Carga una imagen para dibujarla en el banner. Si es una foto de Firebase Storage y el bucket
+ * no permite CORS, la pide a través de /api/imagen (mismo dominio) para poder descargar el banner.
+ */
+export async function cargarImagen(src: string): Promise<HTMLImageElement> {
+  try {
+    return await cargarDirecto(src);
+  } catch (e) {
+    if (src.startsWith('https://firebasestorage.googleapis.com/')) return cargarDirecto(`/api/imagen?u=${encodeURIComponent(src)}`);
+    throw e;
+  }
 }

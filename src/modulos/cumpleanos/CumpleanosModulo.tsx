@@ -13,6 +13,7 @@ import { hoyISO } from '../../lib/fechas';
 import { useSesion } from '../../lib/sesion';
 import { limpiarTelefono, numeroWhatsApp } from '../lectura/suscriptores';
 import { BannerCumple } from './BannerCumple';
+import { AvisoEncargo, Encargos, marcarFelicitado, useEncargos } from './Encargos';
 import { MESES, RUTA_CUMPLES, diasParaCumple, edadQueCumple, mensajeFelicitacion, textoFecha, type Cumple } from './datos';
 
 const modulo = moduloPorId('cumpleanos')!;
@@ -33,6 +34,7 @@ export function CumpleanosModulo() {
         { a: '/m/cumpleanos/calendario', texto: 'Calendario' },
         { a: '/m/cumpleanos/registros', texto: 'Registros' },
         { a: '/m/cumpleanos/banner', texto: 'Banner' },
+        { a: '/m/cumpleanos/encargados', texto: 'Encargados' },
         { a: '/m/cumpleanos/link', texto: 'Link de registro' },
       ]}
     >
@@ -44,6 +46,7 @@ export function CumpleanosModulo() {
           <Route path="calendario" element={<Calendario lista={lista} />} />
           <Route path="registros" element={<Registros lista={lista} />} />
           <Route path="banner" element={<PaginaBanner lista={lista} />} />
+          <Route path="encargados" element={<Encargos lista={lista} />} />
           <Route
             path="link"
             element={
@@ -151,6 +154,7 @@ function Proximos({ lista }: { lista: Cumple[] }) {
 
   return (
     <div className="pila">
+      <AvisoEncargo lista={lista} />
       {bloque('🎉 Hoy', deHoy, 'Nadie cumple años hoy.')}
       {bloque('Próximos 7 días', semana, 'Sin cumpleaños esta semana.')}
       {bloque('Resto del mes', mes, 'Sin más cumpleaños en los próximos 30 días.')}
@@ -415,6 +419,8 @@ function PaginaBanner({ lista }: { lista: Cumple[] }) {
   const hoy = hoyISO();
   const orden = useMemo(() => [...lista].sort((a, b) => diasParaCumple(a, hoy) - diasParaCumple(b, hoy)), [lista, hoy]);
   const persona = lista.find((c) => c.id === params.get('id')) || orden[0];
+  const encargos = useEncargos();
+  const { perfil, puede } = useSesion();
 
   if (!persona) {
     return (
@@ -445,7 +451,7 @@ function PaginaBanner({ lista }: { lista: Cumple[] }) {
           </select>
         </label>
       </div>
-      <BannerCumple persona={persona} />
+      <BannerCumple persona={persona} alEnviar={() => marcarFelicitado(persona, lista, encargos, perfil, puede('pastor'))} />
     </div>
   );
 }
