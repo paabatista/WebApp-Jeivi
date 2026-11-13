@@ -51,7 +51,7 @@ export const IGLESIA_POR_DEFECTO: Iglesia = {
   lema: 'Un lugar increíble para encontrarte con Dios',
   colorPrimario: '#4a2c6d',
   colorAcento: '#d4a73a',
-  logoUrl: '',
+  logoUrl: '/marca/logo.png',
   sitioWeb: 'https://www.ministeriojesucristoimperiodevida.com',
   modulosActivos: ['lectura', 'cumpleanos', 'finanzas', 'eventos', 'anuncios', 'solicitudes', 'usuarios', 'configuracion'],
 };
@@ -154,7 +154,7 @@ export function SesionProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     return escucharDoc<Partial<Iglesia>>(
       `iglesias/${IGLESIA_ID}`,
-      (d) => setIglesia({ ...IGLESIA_POR_DEFECTO, ...(d || {}) }),
+      (d) => setIglesia({ ...IGLESIA_POR_DEFECTO, ...(d || {}), logoUrl: d?.logoUrl || IGLESIA_POR_DEFECTO.logoUrl }),
       () => setIglesia(IGLESIA_POR_DEFECTO),
     );
   }, []);

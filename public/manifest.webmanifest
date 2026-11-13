@@ -1,11 +1,19 @@
 {
-  "name": "Jeivi",
+  "name": "Jeivi · Imperio de Vida",
   "short_name": "Jeivi",
-  "description": "Plataforma de la iglesia",
+  "description": "Plataforma del Ministerio Jesucristo Imperio de Vida",
+  "id": "/",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#f6f4f9",
-  "theme_color": "#4a2c6d",
+  "orientation": "portrait-primary",
+  "background_color": "#1a1012",
+  "theme_color": "#1a1012",
   "lang": "es",
-  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+  "icons": [
+    { "src": "/icono-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icono-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icono-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icono-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
 }

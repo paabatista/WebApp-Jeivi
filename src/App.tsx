@@ -67,6 +67,7 @@ export default function App() {
     r.setProperty('--primario', iglesia.colorPrimario);
     r.setProperty('--acento', iglesia.colorAcento);
     document.title = `Jeivi · ${iglesia.nombreCorto}`;
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', iglesia.colorPrimario);
   }, [iglesia]);
 
   return (
