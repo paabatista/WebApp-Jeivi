@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Copy, Download, ImagePlus, MessageCircle, Share2 } from 'lucide-react';
 import { useSesion } from '../../lib/sesion';
+import { registrarBanner } from '../../lib/almacen';
 import { FONDOS, fondoPorId, type Fondo } from './fondos';
 import { FORMATOS, cargarImagen, dibujarBanner, type Formato, type Plantilla, FUENTE_TEXTO, FUENTE_TITULO } from './dibujarBanner';
 import type { ImagenBanco } from './useLectura';
@@ -23,6 +24,8 @@ interface Props {
   /** Cambia los nombres de los campos (para reutilizarlo en anuncios, eventos…). */
   etiquetas?: Partial<Record<keyof DatosBanner, string>>;
   separarComas?: boolean;
+  /** Módulo con el que se guarda en el historial de banners. */
+  moduloHistorial?: string;
 }
 
 let fuentesListas: Promise<unknown> | null = null;
@@ -54,8 +57,8 @@ export function MiniFondo({ fondo, activo, onClick }: { fondo: Fondo; activo: bo
   );
 }
 
-export function GeneradorBanner({ inicial, pie, imagenesBanco, textoMensaje, nombreArchivo, etiquetas = {}, separarComas = true }: Props) {
-  const { iglesia } = useSesion();
+export function GeneradorBanner({ inicial, pie, imagenesBanco, textoMensaje, nombreArchivo, etiquetas = {}, separarComas = true, moduloHistorial = 'lectura' }: Props) {
+  const { iglesia, perfil } = useSesion();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [datos, setDatos] = useState<DatosBanner>(inicial);
   const [formato, setFormato] = useState<Formato>('vertical');
@@ -150,6 +153,7 @@ export function GeneradorBanner({ inicial, pie, imagenesBanco, textoMensaje, nom
       a.download = f.name;
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
+      guardarEnHistorial();
       avisar('Imagen descargada. Ahora adjúntala en WhatsApp.');
     } catch {
       setError('No se pudo generar la imagen con esa foto. Prueba con otra imagen del banco o súbela desde tu equipo.');
@@ -160,6 +164,7 @@ export function GeneradorBanner({ inicial, pie, imagenesBanco, textoMensaje, nom
     try {
       const f = await obtenerArchivo();
       if (navigator.canShare?.({ files: [f] })) {
+        guardarEnHistorial();
         await navigator.share({ files: [f], text: mensaje });
         return;
       }
@@ -168,6 +173,11 @@ export function GeneradorBanner({ inicial, pie, imagenesBanco, textoMensaje, nom
     } catch (e) {
       if ((e as Error)?.name !== 'AbortError') setError('No se pudo compartir. Usa "Descargar" y adjunta la imagen en WhatsApp.');
     }
+  }
+
+  /** Cada banner compartido o descargado queda en el historial (miniatura, y PNG completo si Storage está activo). */
+  function guardarEnHistorial() {
+    if (canvasRef.current) void registrarBanner(canvasRef.current, moduloHistorial, datos.lectura || datos.titulo, perfil).catch((e) => console.warn('historial banner', e));
   }
 
   async function copiarTexto() {

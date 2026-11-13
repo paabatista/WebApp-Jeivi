@@ -9,7 +9,7 @@ import { EstadoCuentaResumen } from '../modulos/finanzas/EstadoCuenta';
 export function Lanzador() {
   const { perfil, iglesia } = useSesion();
   const visibles = MODULOS.filter(
-    (m) => iglesia.modulosActivos.includes(m.id) && tieneNivel(perfil?.rol, m.nivelMinimo),
+    (m) => (m.siempreVisible || iglesia.modulosActivos.includes(m.id)) && tieneNivel(perfil?.rol, m.nivelMinimo),
   );
   const hora = new Date().getHours();
   const saludo = hora < 12 ? 'Buenos días' : hora < 19 ? 'Buenas tardes' : 'Buenas noches';

@@ -13,7 +13,7 @@ import {
   type User,
 } from 'firebase/auth';
 import { auth, IGLESIA_ID } from './firebase';
-import { MODO_DEMO, escucharDoc, guardarDoc, leerDoc } from './datos';
+import { MODO_DEMO, escucharDoc, fijarAuditor, guardarDoc, leerDoc } from './datos';
 import { tieneNivel, type Rol } from './roles';
 import { RUTA_INVITACIONES, normalizarCorreo, type Invitacion } from './invitaciones';
 
@@ -125,6 +125,11 @@ export function SesionProvider({ children }: { children: ReactNode }) {
   const [aviso, setAviso] = useState('');
   const [iglesia, setIglesia] = useState<Iglesia>(IGLESIA_POR_DEFECTO);
   const [verificacion, setVerificacion] = useState(0);
+
+  // Todo lo que haga alguien del equipo queda en el historial con su nombre.
+  useEffect(() => {
+    fijarAuditor(perfil && perfil.rol !== 'pendiente' ? { uid: perfil.uid, nombre: perfil.nombre, iglesiaId: perfil.iglesiaId } : null);
+  }, [perfil?.uid, perfil?.nombre, perfil?.rol, perfil?.iglesiaId]);
 
   // Configuración de la iglesia (marca, módulos activos). Lectura pública para la pantalla de login.
   useEffect(() => {

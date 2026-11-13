@@ -234,7 +234,7 @@ function Editor({ inicial }: { inicial?: Evento }) {
     if (!file) return;
     setSubiendo(true);
     try {
-      set('imagen', await guardarFoto(file, iglesia, 'jeivi/eventos'));
+      set('imagen', await guardarFoto(file, iglesia, 'jeivi/eventos', { autor: perfil, titulo: `Imagen de evento: ${f.titulo}` }));
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -609,6 +609,7 @@ function PaginaBanner({ lista }: { lista: Evento[] }) {
         nombreArchivo={`evento-${e.titulo.replace(/[^\p{L}\d]+/gu, '-').toLowerCase()}`}
         etiquetas={{ etiqueta: 'Tipo', titulo: 'Encabezado', lectura: 'Nombre del evento', nota: 'Detalle', fecha: 'Cuándo' }}
         separarComas={false}
+        moduloHistorial="eventos"
       />
     </div>
   );

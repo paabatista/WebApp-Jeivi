@@ -1,23 +1,23 @@
-import { reducirImagen, subirACloudinary } from './cloudinary';
+import { guardarImagen, type Autor } from './almacen';
 import type { Iglesia } from './sesion';
 
-function blobADataUrl(b: Blob): Promise<string> {
-  return new Promise((ok, mal) => {
-    const r = new FileReader();
-    r.onload = () => ok(String(r.result));
-    r.onerror = () => mal(new Error('No se pudo leer la imagen'));
-    r.readAsDataURL(b);
-  });
-}
-
 /**
- * Guarda una foto y devuelve su URL.
- * Con Cloudinary configurado la sube allí; si no, la reduce (≈500 px) y la guarda como texto
- * dentro del registro (suficiente para banners y sin depender de ningún servicio).
+ * Guarda una foto y devuelve su URL: Firebase Storage (si está activo) → Cloudinary → reducida en el registro.
+ * `carpeta` es "jeivi/<modulo>". Con `autor` la foto queda en el historial de archivos;
+ * con `publicoToken` se sube a la carpeta del link público (formularios sin cuenta).
  */
-export async function guardarFoto(archivo: File, iglesia: Iglesia, carpeta: string): Promise<string> {
-  if (!archivo.type.startsWith('image/')) throw new Error('El archivo debe ser una imagen.');
-  const cl = iglesia.cloudinary;
-  if (cl?.cloudName && cl.uploadPreset) return subirACloudinary(archivo, cl.cloudName, cl.uploadPreset, carpeta);
-  return blobADataUrl(await reducirImagen(archivo, 520, 0.8));
+export async function guardarFoto(
+  archivo: File,
+  iglesia: Iglesia,
+  carpeta: string,
+  extra: { autor?: Autor | null; publicoToken?: string; titulo?: string } = {},
+): Promise<string> {
+  const modulo = carpeta.split('/').pop() || 'fotos';
+  return guardarImagen(archivo, {
+    modulo,
+    titulo: extra.titulo || archivo.name,
+    autor: extra.autor,
+    publicoToken: extra.publicoToken,
+    cloudinary: iglesia.cloudinary,
+  });
 }

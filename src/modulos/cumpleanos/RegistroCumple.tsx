@@ -86,7 +86,7 @@ export function RegistroCumple({ enlace }: { enlace: Enlace }) {
     try {
       for (const p of personas) {
         const f = partirFecha(p.fecha)!;
-        const foto = p.archivo && autoriza ? await guardarFoto(p.archivo, iglesia, 'jeivi/cumpleanos') : '';
+        const foto = p.archivo && autoriza ? await guardarFoto(p.archivo, iglesia, 'jeivi/cumpleanos', { publicoToken: enlace.id }) : '';
         const doc: Omit<Cumple, 'id'> = {
           nombre: p.nombre.trim(),
           dia: f.dia,

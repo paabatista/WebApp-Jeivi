@@ -15,6 +15,7 @@ import { AnunciosModulo } from './modulos/anuncios/AnunciosModulo';
 import { EventosModulo } from './modulos/eventos/EventosModulo';
 import { SolicitudesModulo } from './modulos/solicitudes/SolicitudesModulo';
 import { Usuarios } from './modulos/admin/Usuarios';
+import { HistorialModulo } from './modulos/historial/HistorialModulo';
 import { Configuracion } from './modulos/admin/Configuracion';
 import { Proximamente } from './modulos/proximamente/Proximamente';
 import { PaginaPublica } from './publico/PaginaPublica';
@@ -28,6 +29,7 @@ const COMPONENTES: Partial<Record<string, () => JSX.Element>> = {
   eventos: EventosModulo,
   solicitudes: SolicitudesModulo,
   usuarios: Usuarios,
+  historial: HistorialModulo,
   configuracion: Configuracion,
 };
 
@@ -35,7 +37,7 @@ function RutaModulo() {
   const { id = '' } = useParams();
   const { perfil, iglesia } = useSesion();
   const m = moduloPorId(id);
-  if (!m || !iglesia.modulosActivos.includes(m.id) || !tieneNivel(perfil?.rol, m.nivelMinimo)) return <Navigate to="/" replace />;
+  if (!m || !(m.siempreVisible || iglesia.modulosActivos.includes(m.id)) || !tieneNivel(perfil?.rol, m.nivelMinimo)) return <Navigate to="/" replace />;
   const C = COMPONENTES[m.id];
   return C && m.estado === 'activo' ? <C /> : <Proximamente modulo={m} />;
 }

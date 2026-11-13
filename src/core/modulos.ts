@@ -7,6 +7,7 @@ import {
   Settings,
   Users,
   Wallet,
+  History,
   type LucideIcon,
 } from 'lucide-react';
 import type { Rol } from '../lib/roles';
@@ -28,6 +29,8 @@ export interface Modulo {
   estado: 'activo' | 'proximamente';
   /** Qué hará el módulo (se muestra mientras está en desarrollo). */
   funciones?: string[];
+  /** Siempre visible para quien tenga el nivel (no se puede ocultar en Configuración). */
+  siempreVisible?: boolean;
 }
 
 export const MODULOS: Modulo[] = [
@@ -108,6 +111,16 @@ export const MODULOS: Modulo[] = [
     color: ['#a78bfa', '#6d28d9'],
     nivelMinimo: 'pastor',
     estado: 'activo',
+  },
+  {
+    id: 'historial',
+    nombre: 'Historial',
+    descripcion: 'Quién hizo qué y cuándo en todos los módulos, restaurar lo borrado, y galería de banners y archivos.',
+    icono: History,
+    color: ['#2dd4bf', '#0f766e'],
+    nivelMinimo: 'pastor',
+    estado: 'activo',
+    siempreVisible: true,
   },
   {
     id: 'configuracion',

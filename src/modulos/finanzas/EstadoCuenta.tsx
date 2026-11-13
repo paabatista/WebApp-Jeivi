@@ -45,8 +45,8 @@ export function MiEstadoCuenta({ uid, nombre }: { uid: string; nombre?: string }
   if (cargando || !estado) return <p className="suave">Cargando…</p>;
 
   const movimientos = [
-    ...cargos.map((c) => ({ fecha: `${c.periodo}-01`, tipo: 'cargo' as const, concepto: c.conceptoNombre, detalle: `${textoPeriodo(c.periodo)}${c.descripcion ? ' · ' + c.descripcion : ''}`, monto: c.monto, id: c.id })),
-    ...pagos.map((p) => ({ fecha: p.fecha, tipo: 'pago' as const, concepto: p.conceptoNombre, detalle: `${p.metodo}${p.nota ? ' · ' + p.nota : ''}`, monto: p.monto, id: p.id })),
+    ...cargos.map((c) => ({ fecha: `${c.periodo}-01`, tipo: 'cargo' as const, concepto: c.conceptoNombre, detalle: `${textoPeriodo(c.periodo)}${c.descripcion ? ' · ' + c.descripcion : ''}`, monto: c.monto, id: c.id, adjunto: '' })),
+    ...pagos.map((p) => ({ fecha: p.fecha, tipo: 'pago' as const, concepto: p.conceptoNombre, detalle: `${p.metodo}${p.nota ? ' · ' + p.nota : ''}`, monto: p.monto, id: p.id, adjunto: p.comprobante?.url || '' })),
   ].sort((a, b) => b.fecha.localeCompare(a.fecha));
 
   return (
@@ -108,6 +108,16 @@ export function MiEstadoCuenta({ uid, nombre }: { uid: string; nombre?: string }
                 <small>
                   {m.tipo === 'pago' ? formatoCorto(m.fecha) + ' · ' : ''}
                   {m.detalle}
+                  {m.adjunto && (
+                    <a
+                      className="adjunto"
+                      href={m.adjunto}
+                      {...(m.adjunto.startsWith('data:') ? { download: 'comprobante.jpg' } : { target: '_blank', rel: 'noopener noreferrer' })}
+                    >
+                      {' '}
+                      · ver comprobante
+                    </a>
+                  )}
                 </small>
               </div>
               <strong className={m.tipo === 'pago' ? 'texto-exito' : ''}>

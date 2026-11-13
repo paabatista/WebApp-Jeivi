@@ -1652,3 +1652,98 @@ label {
     font-size: 0.6rem;
   }
 }
+
+/* ---------- Historial ---------- */
+.historial {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+.historial li {
+  border-bottom: 1px solid var(--borde);
+}
+.hist-fila {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  padding: 0.6rem 0.3rem;
+  border: 0;
+  background: none;
+  text-align: left;
+  color: var(--texto);
+}
+.hist-fila:hover {
+  background: var(--fondo);
+}
+.hist-fecha {
+  font-size: 0.8rem;
+  color: var(--suave);
+  min-width: 150px;
+}
+.hist-resumen {
+  flex: 1;
+  min-width: 180px;
+  font-weight: 600;
+}
+.hist-detalle {
+  padding: 0.3rem 0.4rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.hist-accion-crear {
+  background: #e8f6ec;
+  color: var(--exito);
+}
+.hist-accion-borrar {
+  background: #fdecec;
+  color: var(--error);
+}
+.hist-accion-editar {
+  background: #e0ecff;
+  color: #1d4ed8;
+}
+.hist-accion-lote {
+  background: #fff7e0;
+  color: #7a5200;
+}
+.galeria {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+.galeria-item {
+  padding: 0;
+  overflow: hidden;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+.galeria-item img {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  background: var(--fondo);
+}
+.galeria-icono {
+  aspect-ratio: 4 / 5;
+  display: grid;
+  place-items: center;
+  color: var(--suave);
+  background: var(--fondo);
+}
+.galeria-item figcaption {
+  padding: 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.adjunto {
+  margin-left: 0.4rem;
+  color: var(--primario);
+  vertical-align: middle;
+}

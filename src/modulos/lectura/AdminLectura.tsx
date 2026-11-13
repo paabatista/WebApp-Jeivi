@@ -3,7 +3,8 @@ import { useSearchParams } from 'react-router-dom';
 import { Plus, RotateCcw, Trash2, Upload } from 'lucide-react';
 import { useSesion } from '../../lib/sesion';
 import { borrarDoc, guardarDoc } from '../../lib/datos';
-import { subirACloudinary } from '../../lib/cloudinary';
+import { guardarFoto } from '../../lib/fotos';
+import { STORAGE_ACTIVO } from '../../lib/almacen';
 import { diaSemana, formatoCorto, formatoLargo, primerLunes } from '../../lib/fechas';
 import { DIAS_SEMANA, PLAN, textoPasajes } from './plan';
 import { fechaFinCiclo, type Ciclo } from './calendario';
@@ -289,26 +290,27 @@ function Textos() {
 
 /* ---------- Banco de imágenes ---------- */
 function BancoImagenes() {
-  const { iglesia } = useSesion();
+  const { iglesia, perfil } = useSesion();
   const { config } = useLectura();
   const [titulo, setTitulo] = useState('');
   const [url, setUrl] = useState('');
   const [subiendo, setSubiendo] = useState(false);
   const [error, setError] = useState('');
   const cl = iglesia.cloudinary;
+  const puedeSubir = STORAGE_ACTIVO || !!(cl?.cloudName && cl.uploadPreset);
 
   const guardarLista = (imagenes: ImagenBanco[]) => guardarDoc(RUTA_CONFIG, { imagenes });
 
   async function subir(e: React.ChangeEvent<HTMLInputElement>) {
     const archivos = Array.from(e.target.files || []);
     e.target.value = '';
-    if (!archivos.length || !cl?.cloudName || !cl.uploadPreset) return;
+    if (!archivos.length || !puedeSubir) return;
     setError('');
     setSubiendo(true);
     try {
       const nuevas: ImagenBanco[] = [];
       for (const f of archivos) {
-        const u = await subirACloudinary(f, cl.cloudName, cl.uploadPreset, 'jeivi/lectura');
+        const u = await guardarFoto(f, iglesia, 'jeivi/lectura', { autor: perfil, titulo: `Banco de imágenes: ${titulo || f.name}` });
         nuevas.push({ id: id(), url: u, titulo: titulo.trim() || f.name.replace(/\.\w+$/, '') });
       }
       await guardarLista([...config.imagenes, ...nuevas]);
@@ -354,14 +356,14 @@ function BancoImagenes() {
           Título (opcional)
           <input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Ej. Altar, Congregación" />
         </label>
-        {cl?.cloudName && cl.uploadPreset ? (
+        {puedeSubir ? (
           <label className="boton primario subir-archivo">
             <Upload size={16} /> {subiendo ? 'Subiendo…' : 'Subir fotos'}
             <input type="file" accept="image/*" multiple onChange={subir} hidden disabled={subiendo} />
           </label>
         ) : (
           <div className="aviso">
-            Para subir fotos desde el equipo, el super admin debe configurar Cloudinary en Configuración. Mientras tanto puedes
+            Para subir fotos desde el equipo hay que activar Firebase Storage (ver PUBLICAR.md) o Cloudinary. Mientras tanto puedes
             pegar el enlace de una imagen.
           </div>
         )}

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link, Navigate, Route, Routes } from 'react-router-dom';
-import { Download, MessageCircle, Plus, Trash2, Upload, X } from 'lucide-react';
+import { Download, MessageCircle, Paperclip, Plus, Trash2, Upload, X } from 'lucide-react';
 import { Layout, type Pestana } from '../../core/Layout';
 import { Cargando } from '../../core/Cargando';
 import { moduloPorId } from '../../core/modulos';
@@ -34,8 +34,10 @@ import {
   type Pago,
 } from './datos';
 import { exportarExcel } from './exportar';
+import { STORAGE_ACTIVO, guardarComprobante } from '../../lib/almacen';
 import { ejecutarLote, type OperacionLote } from '../../lib/datos';
 import { Importar } from './importar/Importar';
+import { ListaActividad } from '../historial/HistorialModulo';
 
 const modulo = moduloPorId('finanzas')!;
 
@@ -50,6 +52,7 @@ export function FinanzasModulo() {
       { a: '/m/finanzas/gastos', texto: 'Gastos' },
       { a: '/m/finanzas/conceptos', texto: 'Conceptos' },
       { a: '/m/finanzas/importar', texto: 'Importar Excel' },
+      { a: '/m/finanzas/historial', texto: 'Historial' },
     );
   }
   return (
@@ -96,6 +99,7 @@ function AdminFinanzas() {
       <Route path="gastos" element={<Gastos d={d} />} />
       <Route path="conceptos" element={<Conceptos d={d} />} />
       <Route path="importar" element={<Importar d={d} />} />
+      <Route path="historial" element={<ListaActividad soloModulo="finanzas" />} />
       <Route path="*" element={<Navigate to="/m/finanzas" replace />} />
     </Routes>
   );
@@ -505,7 +509,7 @@ function TablaMov({
   columnas,
   borrar,
 }: {
-  filas: { id: string; a: string; b: string; c: string; fecha: string; monto: number }[];
+  filas: { id: string; a: string; b: string; c: string; fecha: string; monto: number; adjunto?: string }[];
   columnas: [string, string, string, string];
   borrar: (id: string) => void;
 }) {
@@ -527,7 +531,10 @@ function TablaMov({
             <tr key={f.id}>
               <td>{f.a}</td>
               <td>{f.b}</td>
-              <td>{f.c || '—'}</td>
+              <td>
+                {f.c || '—'}
+                {f.adjunto && <EnlaceAdjunto url={f.adjunto} />}
+              </td>
               <td>{f.fecha}</td>
               <td className="num">{dinero(f.monto)}</td>
               <td>
@@ -575,6 +582,9 @@ function Pagos({ d }: { d: DatosFin }) {
   const [nota, setNota] = useState('');
   const [filtro, setFiltro] = useState(periodoActual());
   const [msg, setMsg] = useState('');
+  const [archivo, setArchivo] = useState<File | null>(null);
+  const [subiendo, setSubiendo] = useState(false);
+  const [error, setError] = useState('');
 
   const estado = useMemo(
     () => (uid ? calcularEstado(d.cargos.filter((c) => c.diaconoUid === uid), d.pagos.filter((p) => p.diaconoUid === uid)) : null),
@@ -591,6 +601,19 @@ function Pagos({ d }: { d: DatosFin }) {
     const u = d.usuarios.find((x) => x.uid === uid);
     const c = d.conceptos.find((x) => x.id === conceptoId);
     if (!u || !c || !perfil || !(Number(monto) > 0)) return;
+    setError('');
+    const id = nuevoId(16);
+    let comprobante: Pago['comprobante'];
+    if (archivo) {
+      setSubiendo(true);
+      try {
+        comprobante = await guardarComprobante(archivo, `Comprobante aporte · ${u.nombre} · ${c.nombre}`, `${RUTA_PAGOS}/${id}`, perfil);
+      } catch (err) {
+        setSubiendo(false);
+        return setError((err as Error).message);
+      }
+      setSubiendo(false);
+    }
     const p: Omit<Pago, 'id'> = {
       diaconoUid: u.uid,
       diaconoNombre: u.nombre,
@@ -602,11 +625,13 @@ function Pagos({ d }: { d: DatosFin }) {
       nota: nota.trim(),
       creado: new Date().toISOString(),
       registradoPor: perfil.uid,
+      ...(comprobante ? { comprobante } : {}),
     };
-    await guardarDoc(`${RUTA_PAGOS}/${nuevoId(16)}`, p, false);
+    await guardarDoc(`${RUTA_PAGOS}/${id}`, p, false);
     setMsg(`Aporte de ${dinero(p.monto)} de ${u.nombre} registrado.`);
     setMonto('');
     setNota('');
+    setArchivo(null);
     setTimeout(() => setMsg(''), 3500);
   }
 
@@ -671,9 +696,11 @@ function Pagos({ d }: { d: DatosFin }) {
             {estado.alDia ? 'Este diácono está al día.' : `Pendiente: ${resumenDeuda(estado)}`}
           </div>
         )}
+        <CampoComprobante archivo={archivo} setArchivo={setArchivo} />
         {msg && <div className="exito">{msg}</div>}
-        <button className="boton primario">
-          <Plus size={16} /> Registrar aporte
+        {error && <div className="error">{error}</div>}
+        <button className="boton primario" disabled={subiendo}>
+          <Plus size={16} /> {subiendo ? 'Subiendo comprobante…' : 'Registrar aporte'}
         </button>
       </form>
 
@@ -683,7 +710,7 @@ function Pagos({ d }: { d: DatosFin }) {
           <SelectorPeriodo periodo={filtro} setPeriodo={setFiltro} />
         </div>
         <TablaMov
-          filas={lista.map((p) => ({ id: p.id, a: p.diaconoNombre, b: p.conceptoNombre, c: [p.metodo, p.nota].filter(Boolean).join(' · '), fecha: formatoCorto(p.fecha), monto: p.monto }))}
+          filas={lista.map((p) => ({ id: p.id, a: p.diaconoNombre, b: p.conceptoNombre, c: [p.metodo, p.nota].filter(Boolean).join(' · '), fecha: formatoCorto(p.fecha), monto: p.monto, adjunto: p.comprobante?.url }))}
           columnas={['Diácono', 'Concepto', 'Método / nota', 'Fecha']}
           borrar={(id) => borrarDoc(`${RUTA_PAGOS}/${id}`)}
         />
@@ -703,6 +730,9 @@ function Gastos({ d }: { d: DatosFin }) {
   const [nota, setNota] = useState('');
   const [campos, setCampos] = useState<Record<string, string>>({});
   const [filtro, setFiltro] = useState(periodoActual());
+  const [archivo, setArchivo] = useState<File | null>(null);
+  const [subiendo, setSubiendo] = useState(false);
+  const [error, setError] = useState('');
   const concepto = d.conceptos.find((c) => c.id === conceptoId);
 
   async function registrar(e: FormEvent) {
@@ -710,6 +740,19 @@ function Gastos({ d }: { d: DatosFin }) {
     if (!concepto || !perfil || !(Number(monto) > 0)) return;
     const etiquetados: Record<string, string> = {};
     concepto.campos.forEach((c) => campos[c.id] && (etiquetados[c.nombre] = campos[c.id]));
+    setError('');
+    const id = nuevoId(16);
+    let comprobante: Gasto['comprobante'];
+    if (archivo) {
+      setSubiendo(true);
+      try {
+        comprobante = await guardarComprobante(archivo, `Comprobante gasto · ${concepto.nombre} · ${proveedor || fecha}`, `${RUTA_GASTOS}/${id}`, perfil);
+      } catch (err) {
+        setSubiendo(false);
+        return setError((err as Error).message);
+      }
+      setSubiendo(false);
+    }
     const g: Omit<Gasto, 'id'> = {
       conceptoId: concepto.id,
       conceptoNombre: concepto.nombre,
@@ -721,12 +764,14 @@ function Gastos({ d }: { d: DatosFin }) {
       campos: etiquetados,
       creado: new Date().toISOString(),
       registradoPor: perfil.uid,
+      ...(comprobante ? { comprobante } : {}),
     };
-    await guardarDoc(`${RUTA_GASTOS}/${nuevoId(16)}`, g, false);
+    await guardarDoc(`${RUTA_GASTOS}/${id}`, g, false);
     setMonto('');
     setProveedor('');
     setNota('');
     setCampos({});
+    setArchivo(null);
   }
 
   const lista = d.gastos.filter((g) => !filtro || g.periodo === filtro).sort((a, b) => b.fecha.localeCompare(a.fecha));
@@ -781,8 +826,10 @@ function Gastos({ d }: { d: DatosFin }) {
             ))}
           </div>
         )}
-        <button className="boton primario">
-          <Plus size={16} /> Registrar gasto
+        <CampoComprobante archivo={archivo} setArchivo={setArchivo} />
+        {error && <div className="error">{error}</div>}
+        <button className="boton primario" disabled={subiendo}>
+          <Plus size={16} /> {subiendo ? 'Subiendo comprobante…' : 'Registrar gasto'}
         </button>
       </form>
       <section className="tarjeta">
@@ -798,6 +845,7 @@ function Gastos({ d }: { d: DatosFin }) {
             c: [g.nota, ...Object.entries(g.campos || {}).map(([k, v]) => `${k}: ${v}`)].filter(Boolean).join(' · '),
             fecha: formatoCorto(g.fecha),
             monto: g.monto,
+            adjunto: g.comprobante?.url,
           }))}
           columnas={['Concepto', 'Proveedor', 'Detalle', 'Fecha']}
           borrar={(id) => borrarDoc(`${RUTA_GASTOS}/${id}`)}
@@ -912,4 +960,47 @@ function Conceptos({ d }: { d: DatosFin }) {
 function sinId<T extends { id: string }>(x: T): Omit<T, 'id'> {
   const { id: _id, ...resto } = x;
   return resto;
+}
+
+/** Adjuntar foto o PDF del recibo. */
+function CampoComprobante({ archivo, setArchivo }: { archivo: File | null; setArchivo: (f: File | null) => void }) {
+  return (
+    <div className="fila logo-fila">
+      <label className="boton subir-archivo">
+        <Paperclip size={16} /> {archivo ? 'Cambiar comprobante' : STORAGE_ACTIVO ? 'Adjuntar comprobante (foto o PDF)' : 'Adjuntar comprobante (foto)'}
+        <input
+          type="file"
+          accept={STORAGE_ACTIVO ? 'image/*,application/pdf' : 'image/*'}
+          hidden
+          onChange={(e) => {
+            setArchivo(e.target.files?.[0] || null);
+            e.target.value = '';
+          }}
+        />
+      </label>
+      {archivo && (
+        <span className="suave pequeno">
+          {archivo.name}{' '}
+          <button type="button" className="enlace" onClick={() => setArchivo(null)}>
+            quitar
+          </button>
+        </span>
+      )}
+    </div>
+  );
+}
+
+/** Ícono para abrir o descargar el comprobante adjunto. */
+export function EnlaceAdjunto({ url }: { url: string }) {
+  const interno = url.startsWith('data:');
+  return (
+    <a
+      className="adjunto"
+      href={url}
+      title="Ver comprobante"
+      {...(interno ? { download: 'comprobante.jpg' } : { target: '_blank', rel: 'noopener noreferrer' })}
+    >
+      <Paperclip size={14} />
+    </a>
+  );
 }

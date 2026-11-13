@@ -15,6 +15,7 @@ Hecha para **Ministerio Jesucristo Imperio de Vida**, preparada para que más ad
 | Eventos | ✅ | Próximos, calendario mensual, responsables, tareas, banner, link de inscripción con cupo y lista de inscritos |
 | Anuncios | ✅ | Tablero informativo, anuncios con imagen y vigencia, banner, link público del tablero, suscripción a avisos y envío por correo |
 | Solicitudes | ✅ | Oración, visitas, consejería… por link público; bandeja con estados, responsable, notas de seguimiento; confidenciales solo para pastores |
+| Historial | ✅ | Quién hizo qué y cuándo en todos los módulos (antes → después), restaurar lo borrado, galería de banners, fotos y comprobantes |
 | Usuarios / Configuración | ✅ | Aprobar cuentas y niveles · nombre, colores, logo, módulos, Cloudinary |
 
 ### Quién usa Jeivi

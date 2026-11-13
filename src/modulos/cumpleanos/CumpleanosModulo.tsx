@@ -193,7 +193,7 @@ function Calendario({ lista }: { lista: Cumple[] }) {
 const pad = (n: number) => String(n).padStart(2, '0');
 
 function FormCumple({ inicial, alTerminar }: { inicial?: Cumple; alTerminar: () => void }) {
-  const { iglesia } = useSesion();
+  const { iglesia, perfil } = useSesion();
   const [nombre, setNombre] = useState(inicial?.nombre || '');
   const [dia, setDia] = useState(inicial ? String(inicial.dia) : '');
   const [mes, setMes] = useState(inicial ? String(inicial.mes) : '');
@@ -211,7 +211,7 @@ function FormCumple({ inicial, alTerminar }: { inicial?: Cumple; alTerminar: () 
     if (!f) return;
     setOcupado(true);
     try {
-      setFoto(await guardarFoto(f, iglesia, 'jeivi/cumpleanos'));
+      setFoto(await guardarFoto(f, iglesia, 'jeivi/cumpleanos', { autor: perfil, titulo: `Foto de cumpleaños: ${nombre}` }));
     } catch (err) {
       setError((err as Error).message);
     } finally {

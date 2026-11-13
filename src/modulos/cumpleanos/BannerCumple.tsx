@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Download, ImagePlus, MessageCircle, Share2 } from 'lucide-react';
 import { useSesion } from '../../lib/sesion';
+import { registrarBanner } from '../../lib/almacen';
 import { FONDOS, fondoPorId } from '../lectura/fondos';
 import { FORMATOS, cargarImagen, type Formato } from '../lectura/dibujarBanner';
 import { MiniFondo, cargarFuentes } from '../lectura/GeneradorBanner';
@@ -10,7 +11,7 @@ import { dibujarCumple } from './dibujarCumple';
 import { mensajeFelicitacion, textoFecha, type Cumple } from './datos';
 
 export function BannerCumple({ persona }: { persona: Cumple }) {
-  const { iglesia } = useSesion();
+  const { iglesia, perfil } = useSesion();
   const { config } = useLectura();
   const ref = useRef<HTMLCanvasElement>(null);
   const [formato, setFormato] = useState<Formato>('vertical');
@@ -74,15 +75,23 @@ export function BannerCumple({ persona }: { persona: Cumple }) {
       a.download = f.name;
       a.click();
       setTimeout(() => URL.revokeObjectURL(u), 1000);
+      historial();
     } catch {
       setError('No se pudo generar la imagen con esa foto. Prueba subiéndola desde tu equipo.');
     }
   }
 
+  function historial() {
+    if (ref.current) void registrarBanner(ref.current, 'cumpleanos', `Cumpleaños: ${nombre}`, perfil).catch((e) => console.warn('historial banner', e));
+  }
+
   async function compartir() {
     try {
       const f = await archivo();
-      if (navigator.canShare?.({ files: [f] })) return void (await navigator.share({ files: [f], text: mensajeFelicitacion(persona, iglesia.nombre) }));
+      if (navigator.canShare?.({ files: [f] })) {
+        historial();
+        return void (await navigator.share({ files: [f], text: mensajeFelicitacion(persona, iglesia.nombre) }));
+      }
       await descargar();
     } catch (e) {
       if ((e as Error)?.name !== 'AbortError') setError('No se pudo compartir; usa Descargar.');

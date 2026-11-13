@@ -44,6 +44,13 @@ export interface Cargo {
 
 export const METODOS = ['Efectivo', 'Yappy', 'Transferencia', 'Otro'] as const;
 
+/** Foto o PDF del recibo (en Storage) o foto reducida dentro del registro. */
+export interface Comprobante {
+  url: string;
+  nombre: string;
+  tipo: string;
+}
+
 export interface Pago {
   id: string;
   diaconoUid: string;
@@ -54,6 +61,7 @@ export interface Pago {
   fecha: string; // YYYY-MM-DD
   metodo: (typeof METODOS)[number];
   nota?: string;
+  comprobante?: Comprobante;
   creado: string;
   registradoPor: string;
   /** Si vino de un Excel: de qué archivo y hoja (para poder reemplazarlo al subirlo otra vez). */
@@ -72,6 +80,7 @@ export interface Gasto {
   proveedor?: string;
   nota?: string;
   campos: Record<string, string>;
+  comprobante?: Comprobante;
   creado: string;
   registradoPor: string;
   /** Si vino de un Excel: de qué archivo y hoja (para poder reemplazarlo al subirlo otra vez). */

@@ -4,13 +4,13 @@ import { MODULOS, moduloPorId } from '../../core/modulos';
 import { IconoModulo } from '../../core/IconoModulo';
 import { guardarDoc } from '../../lib/datos';
 import { IGLESIA_ID } from '../../lib/firebase';
-import { subirACloudinary } from '../../lib/cloudinary';
+import { guardarFoto } from '../../lib/fotos';
 import { useSesion, type Iglesia } from '../../lib/sesion';
 
 const modulo = moduloPorId('configuracion')!;
 
 export function Configuracion() {
-  const { iglesia } = useSesion();
+  const { iglesia, perfil } = useSesion();
   const [f, setF] = useState<Iglesia>(iglesia);
   const [msg, setMsg] = useState('');
   const [error, setError] = useState('');
@@ -35,10 +35,9 @@ export function Configuracion() {
     const archivo = e.target.files?.[0];
     e.target.value = '';
     if (!archivo) return;
-    if (!f.cloudinary?.cloudName || !f.cloudinary.uploadPreset) return setError('Primero configura Cloudinary (abajo) y guarda.');
     setSubiendo(true);
     try {
-      set('logoUrl', await subirACloudinary(archivo, f.cloudinary.cloudName, f.cloudinary.uploadPreset, 'jeivi/marca'));
+      set('logoUrl', await guardarFoto(archivo, f, 'jeivi/marca', { autor: perfil, titulo: 'Logo de la iglesia' }));
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -105,8 +104,8 @@ export function Configuracion() {
               <label key={m.id} className="modulo-opcion">
                 <input
                   type="checkbox"
-                  checked={f.modulosActivos.includes(m.id)}
-                  disabled={m.id === 'configuracion'}
+                  checked={m.siempreVisible || f.modulosActivos.includes(m.id)}
+                  disabled={m.id === 'configuracion' || m.siempreVisible}
                   onChange={() => alternarModulo(m.id)}
                 />
                 <IconoModulo modulo={m} tam={40} />

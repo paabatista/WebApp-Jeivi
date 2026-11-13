@@ -197,7 +197,7 @@ function Editor({ inicial }: { inicial?: Anuncio }) {
     if (!f) return;
     setSubiendo(true);
     try {
-      setImagen(await guardarFoto(f, iglesia, 'jeivi/anuncios'));
+      setImagen(await guardarFoto(f, iglesia, 'jeivi/anuncios', { autor: perfil, titulo: `Imagen de anuncio: ${titulo}` }));
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -345,6 +345,7 @@ function PaginaBanner({ lista }: { lista: Anuncio[] }) {
         nombreArchivo={`anuncio-${a.titulo.replace(/[^\p{L}\d]+/gu, '-').toLowerCase()}`}
         etiquetas={{ etiqueta: 'Categoría', titulo: 'Encabezado', lectura: 'Título del anuncio', nota: 'Texto', fecha: 'Cuándo' }}
         separarComas={false}
+        moduloHistorial="anuncios"
       />
     </div>
   );

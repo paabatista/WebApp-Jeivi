@@ -15,7 +15,8 @@
 - **Pastor / super admin** ven todo lo de su iglesia. El **diácono** solo ve **su** estado de cuenta en Finanzas, y no ve las solicitudes confidenciales ni la lista de usuarios.
 - Los links públicos solo pueden **crear** registros en su módulo, con campos y tamaños limitados, y solo mientras el link esté activo.
 - Las reglas corren en los servidores de Google, así que no se pueden saltar desde el navegador.
-- **Storage** (`storage.rules`): todo cerrado. Jeivi no usa Firebase Storage.
+- **Storage** (`storage.rules`): aislado por iglesia; solo el equipo sube (comprobantes solo pastores); la congregación solo puede subir fotos a la carpeta de un link activo; nada se sobrescribe ni se borra.
+- **Historial inmutable**: cada cambio queda registrado (quién, cuándo, antes → después) y las reglas impiden editarlo o borrarlo. Ver [STORAGE.md](STORAGE.md).
 
 ### 🌐 Protección de la web (`vercel.json`)
 - **Security headers:** Content-Security-Policy, Strict-Transport-Security (HSTS), X-Frame-Options DENY, X-Content-Type-Options nosniff, Referrer-Policy y Permissions-Policy.

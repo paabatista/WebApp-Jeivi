@@ -197,6 +197,25 @@ service cloud.firestore {
         );
       }
 
+      // ----- Historial (auditoría) -----
+      // Solo se AGREGA: nadie (ni el super admin) puede editar ni borrar el historial desde la app.
+      match /historial/{id} {
+        allow read: if equipo(ig, 80);
+        allow create: if equipo(ig, 50)
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.accion in ['crear', 'editar', 'borrar', 'lote', 'banner', 'archivo']
+          && request.resource.data.modulo is string
+          && request.resource.data.fecha is string;
+        allow update, delete: if false;
+      }
+
+      // Registro de archivos (banners, fotos, comprobantes): también permanente.
+      match /archivos/{id} {
+        allow read: if equipo(ig, 50);
+        allow create: if equipo(ig, 50) && request.resource.data.subidoPor == request.auth.uid;
+        allow update, delete: if false;
+      }
+
       // ----- Finanzas -----
       match /finConceptos/{id} {
         allow read: if equipo(ig, 50);

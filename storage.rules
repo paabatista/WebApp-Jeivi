@@ -1,12 +1,55 @@
 rules_version = '2';
 
-// Jeivi no usa Firebase Storage (las imágenes van a Cloudinary o reducidas dentro de Firestore).
-// Si algún día se activa Storage, todo queda cerrado salvo lo que se habilite aquí,
-// siempre aislado por iglesia: /iglesias/{iglesiaId}/...
+// Reglas de Firebase Storage de Jeivi.
+// - Todo está aislado por iglesia: /iglesias/{iglesiaId}/...
+// - Lo que no esté permitido aquí queda DENEGADO.
+// - Nada se sobrescribe ni se borra desde la app: los archivos son el historial permanente.
+// - Las reglas leen Firestore para saber quién es quién (rol e iglesia del usuario, links activos).
 service firebase.storage {
   match /b/{bucket}/o {
-    match /{todo=**} {
-      allow read, write: if false;
+
+    function perfil() {
+      return firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data;
+    }
+    function equipo(ig) {
+      return request.auth != null
+        && firestore.exists(/databases/(default)/documents/users/$(request.auth.uid))
+        && perfil().iglesiaId == ig
+        && perfil().rol in ['superadmin', 'pastor', 'diacono'];
+    }
+    function pastor(ig) {
+      return equipo(ig) && perfil().rol in ['superadmin', 'pastor'];
+    }
+    function imagen(maxMB) {
+      return request.resource.contentType.matches('image/.*') && request.resource.size < maxMB * 1024 * 1024;
+    }
+    function pdf(maxMB) {
+      return request.resource.contentType == 'application/pdf' && request.resource.size < maxMB * 1024 * 1024;
+    }
+    function enlaceActivo(ig, token) {
+      return firestore.exists(/databases/(default)/documents/iglesias/$(ig)/enlaces/$(token))
+        && firestore.get(/databases/(default)/documents/iglesias/$(ig)/enlaces/$(token)).data.activo == true;
+    }
+
+    // Fotos que sube la congregación por un link público (ej. registro de cumpleaños).
+    // Solo mientras el link esté activo; quien la sube puede obtener su enlace, pero nadie puede listar la carpeta.
+    match /iglesias/{ig}/publico/{token}/{archivo} {
+      allow create: if enlaceActivo(ig, token) && imagen(5);
+      allow get: if enlaceActivo(ig, token) || equipo(ig);
+      allow list: if equipo(ig);
+    }
+
+    // Comprobantes de finanzas (fotos o PDF): los suben pastores; los ve el equipo.
+    match /iglesias/{ig}/finanzas/{mes}/{archivo} {
+      allow read: if equipo(ig);
+      allow create: if pastor(ig) && (imagen(10) || pdf(10));
+    }
+
+    // Banners, fotos de cumpleaños, imágenes de anuncios/eventos, logo, banco de imágenes.
+    // Las de anuncios, eventos y la marca se ven en los links públicos.
+    match /iglesias/{ig}/{modulo}/{mes}/{archivo} {
+      allow read: if modulo in ['anuncios', 'eventos', 'marca', 'lectura'] || equipo(ig);
+      allow create: if equipo(ig) && modulo != 'publico' && modulo != 'finanzas' && imagen(10);
     }
   }
 }
