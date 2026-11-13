@@ -66,18 +66,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .join('\n');
     const waUrl = `https://wa.me/?text=${encodeURIComponent(mensajeWa)}`;
 
-    let destinatarios: { uid: string; email: string; nombre: string }[];
+    // clave: 'u:<uid>' para diáconos con usuario, 's:<id>' para la congregación suscrita por link.
+    let destinatarios: { clave: string; email: string; nombre: string }[];
     if (typeof req.query.prueba === 'string') {
-      destinatarios = [{ uid: 'prueba', email: req.query.prueba, nombre: 'Prueba' }];
+      destinatarios = [{ clave: 'prueba', email: req.query.prueba, nombre: 'Prueba' }];
     } else {
-      const snap = await db.collection('users').where('iglesiaId', '==', IGLESIA_ID).where('suscritoCorreo', '==', true).get();
-      destinatarios = snap.docs
-        .map((d) => ({ uid: d.id, email: String(d.get('email') || ''), nombre: String(d.get('nombre') || '') }))
-        .filter((d) => d.email.includes('@'));
+      const [usuarios, suscriptores] = await Promise.all([
+        db.collection('users').where('iglesiaId', '==', IGLESIA_ID).where('suscritoCorreo', '==', true).get(),
+        db.collection(`iglesias/${IGLESIA_ID}/suscriptores`).where('activo', '==', true).get(),
+      ]);
+      const vistos = new Set<string>();
+      destinatarios = [
+        ...usuarios.docs.map((d) => ({ clave: `u:${d.id}`, email: String(d.get('email') || ''), nombre: String(d.get('nombre') || '') })),
+        ...suscriptores.docs.map((d) => ({ clave: `s:${d.id}`, email: String(d.get('email') || ''), nombre: String(d.get('nombre') || '') })),
+      ].filter((d) => {
+        const e = d.email.toLowerCase();
+        if (!e.includes('@') || vistos.has(e)) return false;
+        vistos.add(e);
+        return true;
+      });
     }
 
     const correos: Correo[] = destinatarios.map((d) => {
-      const bajaUrl = `${appUrl}/api/baja?u=${encodeURIComponent(d.uid)}&t=${firmaBaja(d.uid)}`;
+      const bajaUrl = `${appUrl}/api/baja?k=${encodeURIComponent(d.clave)}&t=${firmaBaja(d.clave)}`;
       const html = `<!doctype html><html lang="es"><body style="margin:0;background:#f6f4f9;font-family:Montserrat,Segoe UI,Arial,sans-serif;color:#1f1a2b">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f4f9;padding:24px 12px"><tr><td align="center">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:18px;overflow:hidden">

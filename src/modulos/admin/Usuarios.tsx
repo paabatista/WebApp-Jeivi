@@ -11,9 +11,8 @@ const modulo = moduloPorId('usuarios')!;
 const DESCRIPCION_ROL: Record<Rol, string> = {
   superadmin: 'Todo, incluida la configuración de la app.',
   pastor: 'Administra usuarios, ciclos, finanzas y contenidos. No cambia la configuración de la app.',
-  ejecutivo: 'Diáconos y líderes: entran a los módulos, editan cosas básicas y generan banners y anuncios.',
-  miembro: 'Ve la lectura y se suscribe (lectura diaria, cumpleaños, tablero informativo). No crea banners.',
-  pendiente: 'Cuenta nueva sin aprobar: solo ve la lectura del día.',
+  diacono: 'Entra a los módulos, edita cosas básicas, genera banners y links de registro, y ve su estado de cuenta.',
+  pendiente: 'Cuenta nueva: no ve nada hasta que un pastor la apruebe como diácono.',
 };
 
 export function Usuarios() {

@@ -12,6 +12,7 @@ import { useLectura } from './useLectura';
 import { useProgreso } from './useProgreso';
 import { GeneradorBanner, type DatosBanner } from './GeneradorBanner';
 import { AdminLectura } from './AdminLectura';
+import { SuscriptoresLectura } from './SuscriptoresLectura';
 
 const modulo = moduloPorId('lectura')!;
 
@@ -20,20 +21,20 @@ export function LecturaModulo() {
   const pestanas: Pestana[] = [
     { a: '/m/lectura', texto: 'Hoy', fin: true },
     { a: '/m/lectura/plan', texto: 'Plan completo' },
+    { a: '/m/lectura/banner', texto: 'Banner' },
+    { a: '/m/lectura/suscriptores', texto: 'Link y suscriptores' },
+    { a: '/m/lectura/admin', texto: 'Administrar' },
   ];
-  // Crear banners es de ejecutivos/diáconos en adelante; los miembros solo leen y se suscriben.
-  if (puede('ejecutivo')) {
-    pestanas.push({ a: '/m/lectura/banner', texto: 'Banner' });
-    pestanas.push({ a: '/m/lectura/admin', texto: 'Administrar' });
-  }
 
+  // El módulo solo es accesible para diácono en adelante (ver modulos.ts).
   return (
     <Layout modulo={modulo} pestanas={pestanas}>
       <Routes>
         <Route index element={<Hoy />} />
         <Route path="plan" element={<PlanCompleto />} />
-        {puede('ejecutivo') && <Route path="banner" element={<PaginaBanner />} />}
-        {puede('ejecutivo') && <Route path="admin" element={<AdminLectura />} />}
+        {puede('diacono') && <Route path="banner" element={<PaginaBanner />} />}
+        {puede('diacono') && <Route path="suscriptores" element={<SuscriptoresLectura />} />}
+        {puede('diacono') && <Route path="admin" element={<AdminLectura />} />}
         <Route path="*" element={<Navigate to="/m/lectura" replace />} />
       </Routes>
     </Layout>
@@ -154,7 +155,7 @@ function Hoy() {
               Próxima lectura: <strong>{lect.lecturaDe(sig)}</strong>
             </p>
           )}
-          {puede('ejecutivo') && (
+          {puede('diacono') && (
             <div className="acciones">
               <button className="boton claro" onClick={() => nav('/m/lectura/banner?finde=1')}>
                 <ImageIcon size={18} /> Crear banner
@@ -163,7 +164,7 @@ function Hoy() {
           )}
         </section>
         {estado.tipo === 'finDeSemana' && estado.semana.length > 0 && (
-          <SemanaActual ciclo={estado.ciclo} semana={estado.semana[0].semana} leidos={leidos} alternar={alternar} hoy={hoy} lecturaDe={lect.lecturaDe} conBanner={puede('ejecutivo')} />
+          <SemanaActual ciclo={estado.ciclo} semana={estado.semana[0].semana} leidos={leidos} alternar={alternar} hoy={hoy} lecturaDe={lect.lecturaDe} conBanner={puede('diacono')} />
         )}
         <Progreso ciclo={estado.ciclo} leidos={leidos} hoy={hoy} />
       </div>
@@ -193,7 +194,7 @@ function Hoy() {
         {nota && <p className="hero-nota">“{nota}”</p>}
         <p>{capitalizar(formatoLargo(hoy))}</p>
         <div className="acciones">
-          {puede('ejecutivo') && (
+          {puede('diacono') && (
             <button className="boton claro" onClick={() => nav(`/m/lectura/banner?dia=${dia.indice}`)}>
               <ImageIcon size={18} /> Crear banner para WhatsApp
             </button>
@@ -206,7 +207,7 @@ function Hoy() {
           </button>
         </div>
       </section>
-      <SemanaActual ciclo={estado.ciclo} semana={dia.semana} leidos={leidos} alternar={alternar} hoy={hoy} lecturaDe={lect.lecturaDe} conBanner={puede('ejecutivo')} />
+      <SemanaActual ciclo={estado.ciclo} semana={dia.semana} leidos={leidos} alternar={alternar} hoy={hoy} lecturaDe={lect.lecturaDe} conBanner={puede('diacono')} />
       <Progreso ciclo={estado.ciclo} leidos={leidos} hoy={hoy} />
     </div>
   );
@@ -267,12 +268,12 @@ function PlanCompleto() {
                         {ajustado && <span className="chip mini">ajustado</span>}
                       </strong>
                     </div>
-                    {puede('ejecutivo') && (
+                    {puede('diacono') && (
                       <Link to={`/m/lectura/banner?dia=${d.indice}`} className="icono-boton" title="Banner">
                         <ChevronRight size={16} />
                       </Link>
                     )}
-                    {puede('ejecutivo') && (
+                    {puede('diacono') && (
                       <Link to={`/m/lectura/admin?dia=${d.indice}`} className="icono-boton" title="Ajustar">
                         <Pencil size={14} />
                       </Link>

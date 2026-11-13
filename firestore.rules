@@ -1,7 +1,9 @@
 rules_version = '2';
 
 // Reglas de seguridad de Jeivi.
-// Niveles: superadmin(100) > pastor(80) > ejecutivo(50) > miembro(20) > pendiente(10)
+// Usuarios (solo el equipo): superadmin(100) > pastor(80) > diacono(50) > pendiente(10).
+// La congregación NO tiene usuario: solo puede CREAR registros a través de un link activo
+// (suscribirse a la lectura, registrar cumpleaños). Nunca puede leer datos.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -9,14 +11,18 @@ service cloud.firestore {
     function rutaYo() { return /databases/$(database)/documents/users/$(request.auth.uid); }
     function yo() { return get(rutaYo()).data; }
     function nivel(rol) {
-      return rol == 'superadmin' ? 100 : rol == 'pastor' ? 80 : rol == 'ejecutivo' ? 50 : rol == 'miembro' ? 20 : 10;
+      return rol == 'superadmin' ? 100 : rol == 'pastor' ? 80 : rol == 'diacono' ? 50 : 10;
     }
     function miNivel() { return autenticado() && exists(rutaYo()) ? nivel(yo().rol) : 0; }
     function deMiIglesia(ig) { return autenticado() && exists(rutaYo()) && yo().iglesiaId == ig; }
-    function rolPorDefecto(ig) {
-      let ruta = /databases/$(database)/documents/iglesias/$(ig);
-      return exists(ruta) ? get(ruta).data.get('rolPorDefecto', 'miembro') : 'miembro';
+    function equipo(ig, minimo) { return deMiIglesia(ig) && miNivel() >= minimo; }
+
+    // Un link público es válido si existe, está activo y es del módulo indicado.
+    function enlaceValido(ig, token, modulo) {
+      let ruta = /databases/$(database)/documents/iglesias/$(ig)/enlaces/$(token);
+      return token is string && exists(ruta) && get(ruta).data.activo == true && get(ruta).data.modulo == modulo;
     }
+    function texto(v, min, max) { return v is string && v.size() >= min && v.size() <= max; }
 
     // ---------- Usuarios ----------
     match /users/{uid} {
@@ -25,14 +31,13 @@ service cloud.firestore {
         (miNivel() >= 80 && resource.data.iglesiaId == yo().iglesiaId)
       );
 
-      // Cada quien crea su propio perfil, con rol 'pendiente' o el rol por defecto de la iglesia.
+      // Toda cuenta nueva nace 'pendiente'; un pastor la aprueba como diácono.
       // El primer super admin se asigna a mano desde la consola de Firebase.
       allow create: if autenticado()
         && request.auth.uid == uid
         && request.resource.data.uid == uid
         && request.resource.data.email == request.auth.token.email.lower()
-        && (request.resource.data.rol == 'pendiente'
-            || (request.resource.data.rol == 'miembro' && rolPorDefecto(request.resource.data.iglesiaId) == 'miembro'));
+        && request.resource.data.rol == 'pendiente';
 
       allow update: if autenticado() && (
         // El propio usuario: nombre, WhatsApp, suscripción… pero no su rol ni su iglesia.
@@ -57,18 +62,74 @@ service cloud.firestore {
 
     // ---------- Iglesia ----------
     match /iglesias/{ig} {
-      // Lectura pública: nombre, colores y logo se muestran en la pantalla de login.
+      // Público: nombre, colores y logo (login y páginas públicas).
       allow read: if true;
-      allow write: if deMiIglesia(ig) && miNivel() >= 100;
+      allow write: if equipo(ig, 100);
 
-      // Módulo Lectura Bíblica
+      // Links públicos: se abren por su id (token), pero no se pueden listar sin ser del equipo.
+      match /enlaces/{token} {
+        allow get: if true;
+        allow list: if equipo(ig, 50);
+        allow create, update: if equipo(ig, 50);
+        allow delete: if equipo(ig, 80);
+      }
+
+      // ----- Lectura Bíblica -----
       match /lectura/config {
-        allow read: if deMiIglesia(ig);
-        allow write: if deMiIglesia(ig) && miNivel() >= 80;
+        allow read: if true;
+        allow write: if equipo(ig, 80);
       }
       match /lecturaAjustes/{dia} {
-        allow read: if deMiIglesia(ig);
-        allow write: if deMiIglesia(ig) && miNivel() >= 50;
+        allow read: if true;
+        allow write: if equipo(ig, 50);
+      }
+      match /suscriptores/{id} {
+        allow read, update: if equipo(ig, 50);
+        allow delete: if equipo(ig, 80);
+        allow create: if equipo(ig, 50) || (
+          request.resource.data.keys().hasOnly(['nombre', 'email', 'whatsapp', 'enlace', 'activo', 'creado'])
+          && enlaceValido(ig, request.resource.data.enlace, 'lectura')
+          && texto(request.resource.data.nombre, 1, 80)
+          && texto(request.resource.data.email, 0, 120)
+          && texto(request.resource.data.whatsapp, 0, 20)
+          && (request.resource.data.email.size() > 0 || request.resource.data.whatsapp.size() > 0)
+          && request.resource.data.activo == true
+        );
+      }
+
+      // ----- Cumpleaños -----
+      match /cumpleanos/{id} {
+        allow read, update: if equipo(ig, 50);
+        allow delete: if equipo(ig, 80);
+        allow create: if equipo(ig, 50) || (
+          request.resource.data.keys().hasOnly(['nombre', 'dia', 'mes', 'anio', 'foto', 'telefono', 'familia', 'grupo',
+                                                'parentesco', 'origen', 'enlace', 'autorizaFoto', 'creado'])
+          && request.resource.data.origen == 'link'
+          && enlaceValido(ig, request.resource.data.enlace, 'cumpleanos')
+          && texto(request.resource.data.nombre, 1, 80)
+          && request.resource.data.dia is int && request.resource.data.dia >= 1 && request.resource.data.dia <= 31
+          && request.resource.data.mes is int && request.resource.data.mes >= 1 && request.resource.data.mes <= 12
+          && texto(request.resource.data.foto, 0, 400000)
+          && request.resource.data.parentesco in ['titular', 'hijo']
+        );
+      }
+
+      // ----- Finanzas -----
+      match /finConceptos/{id} {
+        allow read: if equipo(ig, 50);
+        allow write: if equipo(ig, 80);
+      }
+      // Cada diácono solo ve SUS cargos y aportes; los pastores ven todo.
+      match /finCargos/{id} {
+        allow read: if deMiIglesia(ig) && (miNivel() >= 80 || resource.data.diaconoUid == request.auth.uid);
+        allow write: if equipo(ig, 80);
+      }
+      match /finPagos/{id} {
+        allow read: if deMiIglesia(ig) && (miNivel() >= 80 || resource.data.diaconoUid == request.auth.uid);
+        allow write: if equipo(ig, 80);
+      }
+      match /finGastos/{id} {
+        allow read, write: if equipo(ig, 80);
       }
     }
   }

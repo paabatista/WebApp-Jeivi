@@ -38,8 +38,6 @@ export interface Iglesia {
   sitioWeb?: string;
   /** Módulos visibles en el lanzador. */
   modulosActivos: string[];
-  /** Rol que recibe una cuenta nueva: 'miembro' (entra directo) o 'pendiente' (requiere aprobación). */
-  rolPorDefecto: 'miembro' | 'pendiente';
   cloudinary?: { cloudName: string; uploadPreset: string };
 }
 
@@ -52,7 +50,6 @@ export const IGLESIA_POR_DEFECTO: Iglesia = {
   logoUrl: '',
   sitioWeb: 'https://www.ministeriojesucristoimperiodevida.com',
   modulosActivos: ['lectura', 'cumpleanos', 'finanzas', 'eventos', 'anuncios', 'solicitudes', 'usuarios', 'configuracion'],
-  rolPorDefecto: 'miembro',
 };
 
 interface Sesion {
@@ -100,7 +97,10 @@ export function SesionProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (MODO_DEMO) {
-      return escucharDoc<Perfil>('users/demo', (d) => setPerfil({ ...PERFIL_DEMO, ...(d || {}) }));
+      return escucharDoc<Perfil>('users/demo', (d) => {
+        if (!d?.iglesiaId) void guardarDoc('users/demo', { ...PERFIL_DEMO, ...(d || {}), iglesiaId: IGLESIA_ID });
+        setPerfil({ ...PERFIL_DEMO, ...(d || {}) });
+      });
     }
     return onAuthStateChanged(auth, (u) => {
       setUsuario(u);
@@ -129,19 +129,14 @@ export function SesionProvider({ children }: { children: ReactNode }) {
         nombre: usuario.displayName || email.split('@')[0],
         foto: usuario.photoURL || undefined,
         iglesiaId: IGLESIA_ID,
-        // El primer super admin se asigna a mano en la consola de Firebase (ver README).
-        rol: iglesia.rolPorDefecto,
+        // Toda cuenta nueva espera aprobación de un pastor. El primer super admin se asigna a mano en Firebase (ver README).
+        rol: 'pendiente',
         suscritoCorreo: false,
         creado: new Date().toISOString(),
       };
-      try {
-        await guardarDoc(`users/${usuario.uid}`, nuevo, false);
-      } catch (e) {
-        // Si la iglesia exige aprobación, las reglas solo permiten 'pendiente'.
-        await guardarDoc(`users/${usuario.uid}`, { ...nuevo, rol: 'pendiente' }, false);
-      }
+      await guardarDoc(`users/${usuario.uid}`, nuevo, false);
     });
-  }, [usuario, iglesia.rolPorDefecto]);
+  }, [usuario]);
 
   const valor = useMemo<Sesion>(
     () => ({

@@ -7,22 +7,34 @@ Hecha para **Ministerio Jesucristo Imperio de Vida**, preparada para que más ad
 
 ## Módulos
 
-| Módulo | Estado | Quién lo ve |
+| Módulo | Estado | Qué hace |
 |---|---|---|
-| Lectura Bíblica (la Biblia en 6 meses + banner para WhatsApp + correo diario) | ✅ Listo | Todos |
-| Usuarios (aprobar cuentas y asignar niveles) | ✅ Listo | Pastor y super admin |
-| Configuración (nombre, colores, logo, módulos activos, Cloudinary) | ✅ Listo | Super admin |
-| Cumpleaños, Finanzas, Eventos, Anuncios, Solicitudes | 🔜 Próximamente | — |
+| Lectura Bíblica | ✅ | Plan de 6 meses, banner para WhatsApp, link público para ver la lectura y suscribirse, correo diario |
+| Cumpleaños | ✅ | Próximos, calendario, registros, banner con foto, link público de registro (persona + hijos + foto), exportar |
+| Finanzas | ✅ | Aportes de los diáconos (luz, alquiler, mantenimiento…), gastos con campos libres, estado de cuenta, Excel |
+| Usuarios / Configuración | ✅ | Aprobar cuentas y niveles · nombre, colores, logo, módulos, Cloudinary |
+| Eventos, Anuncios / tablero, Solicitudes | 🔜 | Próximamente |
 
-### Niveles de acceso
+### Quién usa Jeivi
+
+Solo el **equipo** tiene usuario:
 
 | Nivel | Puede |
 |---|---|
 | **Super admin** | Todo, incluida la configuración de la app |
-| **Pastor (admin)** | Usuarios, ciclos de lectura, imágenes, contenidos. No toca la configuración de la app |
-| **Ejecutivo / Diácono** | Entra a los módulos, edita cosas básicas (lectura y nota del día), crea banners y anuncios |
-| **Miembro** | Ve la lectura y se suscribe (correo de lectura diaria; luego cumpleaños y tablero informativo). **No crea banners** |
-| **Pendiente** | Solo ve la lectura del día (si la iglesia exige aprobar cuentas) |
+| **Pastor (admin)** | Usuarios, finanzas completas, ciclos de lectura, imágenes. No toca la configuración de la app |
+| **Diácono** | Entra a los módulos, edita lo básico, crea banners y **links de registro**, ve **su estado de cuenta** |
+| **Pendiente** | Cuenta nueva: no ve nada hasta que un pastor la aprueba como diácono |
+
+La **congregación no tiene usuario**. Un diácono genera un **link** desde el módulo (Lectura → *Link y suscriptores*, Cumpleaños → *Link de registro*) y lo comparte por WhatsApp. Quien lo abre solo ve ese formulario: no puede ver ni modificar ningún dato. Los links se pueden desactivar en cualquier momento.
+
+### Finanzas: aportes de los diáconos
+
+1. **Conceptos:** Luz, Agua, Alquiler, Mantenimiento… cada uno con *campos libres* para sus gastos (n.º de factura, kWh, vencimiento…).
+2. **Cargos:** lo que le toca a cada diácono. Dos formas: *repartir un recibo* (ej. luz $100 entre 4 = $25 c/u, y opcionalmente se registra como gasto) o *monto fijo* por diácono.
+3. **Aportes:** el pastor registra lo que cada diácono entregó (efectivo, Yappy, transferencia).
+4. **Estado de cuenta:** cada diácono, al entrar a Jeivi, ve **“¡Estás al día!”** o **“Debes $25.00 — Luz (nov 2026)”**. Los pagos se aplican a los meses más antiguos.
+5. **Resumen:** gastos, aportes y pendiente por mes; estado de cada diácono con botón de recordatorio por WhatsApp; **Descargar Excel**.
 
 ## Probar en tu computadora
 
@@ -62,12 +74,12 @@ Crea un repositorio vacío (privado recomendado) y sube esta carpeta. El archivo
 4. Cada `git push` a `main` publica automáticamente.
 
 ### 4. Tu usuario super admin
-1. Entra a la app publicada e inicia sesión (Google, Microsoft o correo).
+1. Entra a la app publicada e inicia sesión (Google, Microsoft o correo). Tu cuenta queda *pendiente*.
 2. En Firebase → Firestore → colección `users` → tu documento → cambia el campo `rol` a `superadmin`.
-3. Recarga la app: ya verás *Usuarios* y *Configuración*. Desde ahí nombras a los pastores y ejecutivos.
+3. Recarga la app: ya verás todos los módulos. Pide a pastores y diáconos que creen su cuenta y apruébalos en *Usuarios*.
 
 ### 5. Correo diario (opcional pero recomendado)
-El cron `/api/cron/lectura-diaria` corre de lunes a viernes a las 5:00 a.m. (hora de Panamá) y envía la lectura a quienes la activaron en *Mi perfil*.
+El cron `/api/cron/lectura-diaria` corre de lunes a viernes a las 5:00 a.m. (hora de Panamá) y envía la lectura a quienes se suscribieron con su correo por el link público, y a los diáconos que la activaron en *Mi perfil*. Quienes dejaron solo su WhatsApp aparecen en *Lectura → Link y suscriptores* con un botón para enviarles la lectura del día.
 
 - **Resend** (3.000 correos/mes gratis): crea cuenta en https://resend.com, verifica el dominio de la iglesia y usa `EMAIL_PROVIDER=resend`, `RESEND_API_KEY`, `EMAIL_FROM=Jeivi <lectura@tu-dominio.com>`.
 - **Brevo** (300/día gratis, sin dominio propio): https://brevo.com, verifica el correo remitente y usa `EMAIL_PROVIDER=brevo`, `BREVO_API_KEY`.
@@ -85,5 +97,5 @@ Crea cuenta gratis en https://cloudinary.com → *Settings → Upload → Upload
 - El plan (26 semanas, lunes a viernes, 130 lecturas) está en `src/modulos/lectura/plan.ts`, transcrito del Excel de la iglesia.
 - Los **ciclos** los define un pastor (fecha de inicio, normalmente primer lunes de enero y de julio). Las **pausas** (feriados, retiros) no avanzan el plan.
 - Sábado y domingo se muestra "Día para ponerte al día" con el resumen de la semana.
-- Un ejecutivo puede reemplazar la lectura de cualquier día (escribiéndola o con el selector de libro/capítulo/versículo) y añadir una nota o versículo. Los hermanos eligen en qué versión leer.
-- El banner se genera en el navegador (canvas) en 3 formatos (cuadrado, vertical, estado de WhatsApp) y 3 diseños, con 8 fondos incluidos, fotos del banco de la iglesia o una foto propia (que no se sube a ningún servidor). En el celular el botón *Compartir en WhatsApp* envía la imagen directamente. Solo ejecutivos, pastores y super admin crean banners.
+- Un diácono puede reemplazar la lectura de cualquier día (escribiéndola o con el selector de libro/capítulo/versículo) y añadir una nota o versículo. Los hermanos eligen en qué versión leer.
+- El banner se genera en el navegador (canvas) en 3 formatos (cuadrado, vertical, estado de WhatsApp) y 3 diseños, con 8 fondos incluidos, fotos del banco de la iglesia o una foto propia (que no se sube a ningún servidor). En el celular el botón *Compartir en WhatsApp* envía la imagen directamente.

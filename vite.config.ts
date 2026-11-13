@@ -5,6 +5,7 @@ export default defineConfig({
   plugins: [react()],
   server: { port: 5180 },
   build: {
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
         manualChunks: {

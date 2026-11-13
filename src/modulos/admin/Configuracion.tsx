@@ -94,13 +94,6 @@ export function Configuracion() {
                 <input type="file" accept="image/*" onChange={subirLogo} hidden />
               </label>
             </div>
-            <label>
-              Cuentas nuevas
-              <select value={f.rolPorDefecto} onChange={(e) => set('rolPorDefecto', e.target.value as Iglesia['rolPorDefecto'])}>
-                <option value="miembro">Entran directo como Miembro</option>
-                <option value="pendiente">Quedan pendientes hasta que un pastor las apruebe</option>
-              </select>
-            </label>
           </div>
         </section>
 

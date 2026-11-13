@@ -719,7 +719,6 @@ label {
 .dia-info small {
   color: var(--suave);
   font-size: 0.75rem;
-  text-transform: capitalize;
 }
 .dia-info strong {
   font-size: 0.93rem;
@@ -776,7 +775,6 @@ label {
 }
 .lienzo {
   width: 100%;
-  max-height: calc(100vh - 200px);
   margin: 0 auto;
   border-radius: 14px;
   overflow: hidden;
@@ -1036,8 +1034,8 @@ label {
     position: static;
   }
   .lienzo {
-    max-height: none;
     max-width: 480px;
+    width: 100% !important;
   }
   .constructor-cita {
     grid-template-columns: 1fr 1fr;
@@ -1074,5 +1072,305 @@ label {
   .barra,
   .pestanas-movil {
     display: none;
+  }
+}
+
+/* ---------- Páginas públicas (links) ---------- */
+.publico {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.publico-cabecera {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.9rem 1rem;
+  background: var(--primario);
+  color: #fff;
+}
+.publico-cabecera img {
+  height: 40px;
+}
+.publico-cabecera div {
+  display: flex;
+  flex-direction: column;
+}
+.publico-cabecera small {
+  opacity: 0.8;
+  font-size: 0.78rem;
+}
+.publico-contenido {
+  flex: 1;
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 1.2rem 1rem 2rem;
+}
+.publico-pie {
+  text-align: center;
+  padding: 1rem;
+  font-size: 0.82rem;
+  color: var(--suave);
+}
+.centrado {
+  text-align: center;
+}
+.acciones.centrar {
+  justify-content: center;
+}
+.con-icono {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* ---------- Links ---------- */
+.lista-enlaces {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.lista-enlaces li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+}
+.lista-enlaces li.inactivo {
+  opacity: 0.55;
+}
+.enlace-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  word-break: break-all;
+}
+.acciones .interruptor {
+  font-size: 0.85rem;
+}
+
+/* ---------- Cumpleaños ---------- */
+.persona {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.persona legend {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  font-size: 1.05rem;
+  margin-bottom: 0.7rem;
+}
+.persona-cuerpo {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+.crece {
+  flex: 1;
+  min-width: 0;
+}
+.foto-circulo {
+  width: 96px;
+  height: 96px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 2px dashed var(--borde);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 0.2rem;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  color: var(--primario);
+  background: #fff;
+}
+.foto-circulo img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.foto-circulo span {
+  position: relative;
+  font-size: 0.72rem;
+  background: rgba(255, 255, 255, 0.85);
+  padding: 0 0.4rem;
+  border-radius: 6px;
+}
+.lista-cumples {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.lista-cumples li {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.55rem 0.6rem;
+  border-radius: 12px;
+}
+.lista-cumples li.es-hoy {
+  background: color-mix(in srgb, #f472b6 14%, #fff);
+}
+.avatar-cumple {
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  display: inline-grid;
+  place-items: center;
+}
+.avatar-cumple.vacio {
+  background: linear-gradient(135deg, #f472b6, #7b4fa8);
+  color: #fff;
+  font-weight: 700;
+}
+.dia-numero {
+  width: 1.6rem;
+  text-align: right;
+  font-weight: 800;
+  color: var(--primario);
+}
+.mes-actual {
+  box-shadow: 0 0 0 2px var(--acento), var(--sombra);
+}
+.acciones-fila {
+  display: flex;
+  gap: 0.2rem;
+}
+.tabla tr.apagado td {
+  opacity: 0.5;
+}
+
+/* ---------- Finanzas ---------- */
+.estado-cuenta {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 1rem 1.2rem;
+  border-radius: var(--radio);
+  margin-bottom: 1.6rem;
+  text-decoration: none;
+  box-shadow: var(--sombra);
+}
+.estado-cuenta div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.estado-cuenta span {
+  font-size: 0.88rem;
+}
+.estado-cuenta.al-dia,
+.estado-grande.al-dia {
+  background: #e8f6ec;
+  color: var(--exito);
+}
+.estado-cuenta.debe,
+.estado-grande.debe {
+  background: #fdecec;
+  color: var(--error);
+}
+.estado-grande {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.estado-grande h1 {
+  margin: 0.1rem 0;
+}
+.texto-exito {
+  color: var(--exito);
+}
+.texto-error {
+  color: var(--error);
+}
+.chip-exito {
+  background: #e8f6ec;
+  color: var(--exito);
+}
+.chip-error {
+  background: #fdecec;
+  color: var(--error);
+}
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+.kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.kpi span {
+  color: var(--suave);
+  font-size: 0.85rem;
+}
+.kpi strong {
+  font-size: 1.6rem;
+}
+.num {
+  text-align: right !important;
+}
+.tabla tfoot td {
+  border-bottom: 0;
+  border-top: 2px solid var(--borde);
+}
+.lista-elegir {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 0.4rem 1rem;
+  margin-top: 0.5rem;
+}
+.campo-libre {
+  margin-bottom: 0.5rem;
+  flex-wrap: nowrap;
+}
+.campo-libre select {
+  max-width: 130px;
+}
+.movimientos,
+.lista-conceptos {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+.movimientos li,
+.lista-conceptos li {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.6rem 0.2rem;
+  border-bottom: 1px solid var(--borde);
+}
+.lista-conceptos li.apagado {
+  opacity: 0.55;
+}
+@media (max-width: 520px) {
+  .persona-cuerpo {
+    flex-direction: column;
+    align-items: center;
+  }
+  .persona-cuerpo .formulario {
+    width: 100%;
   }
 }

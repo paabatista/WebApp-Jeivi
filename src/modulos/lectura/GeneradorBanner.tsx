@@ -23,7 +23,7 @@ interface Props {
 }
 
 let fuentesListas: Promise<unknown> | null = null;
-function cargarFuentes() {
+export function cargarFuentes() {
   if (!fuentesListas && 'fonts' in document) {
     fuentesListas = Promise.all([
       document.fonts.load(`800 40px ${FUENTE_TEXTO}`),
@@ -36,7 +36,7 @@ function cargarFuentes() {
   return fuentesListas ?? Promise.resolve();
 }
 
-function MiniFondo({ fondo, activo, onClick }: { fondo: Fondo; activo: boolean; onClick: () => void }) {
+export function MiniFondo({ fondo, activo, onClick }: { fondo: Fondo; activo: boolean; onClick: () => void }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const c = ref.current;
@@ -192,7 +192,7 @@ export function GeneradorBanner({ inicial, pie, imagenesBanco, textoMensaje, nom
   return (
     <div className="generador">
       <div className="generador-vista">
-        <div className="lienzo" style={{ aspectRatio: `${w} / ${h}` }}>
+        <div className="lienzo" style={{ aspectRatio: `${w} / ${h}`, width: `min(100%, calc((100vh - 220px) * ${w / h}))` }}>
           <canvas ref={canvasRef} width={w} height={h} />
         </div>
         <div className="acciones">

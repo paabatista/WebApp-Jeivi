@@ -4,6 +4,7 @@ import { tieneNivel } from '../lib/roles';
 import { Layout } from './Layout';
 import { MODULOS } from './modulos';
 import { IconoModulo } from './IconoModulo';
+import { EstadoCuentaResumen } from '../modulos/finanzas/EstadoCuenta';
 
 export function Lanzador() {
   const { perfil, iglesia } = useSesion();
@@ -24,9 +25,10 @@ export function Lanzador() {
         </div>
         {perfil?.rol === 'pendiente' && (
           <div className="aviso">
-            Tu cuenta está pendiente de aprobación. Mientras tanto puedes ver la lectura bíblica del día.
+            Tu cuenta está pendiente de aprobación. Un pastor debe aprobarte como diácono para que veas los módulos.
           </div>
         )}
+        {perfil && perfil.rol !== 'pendiente' && iglesia.modulosActivos.includes('finanzas') && <EstadoCuentaResumen />}
         <div className="rejilla-apps">
           {visibles.map((m) => (
             <Link key={m.id} to={`/m/${m.id}`} className="app-tile">

@@ -8,13 +8,18 @@ import { Lanzador } from './core/Lanzador';
 import { Perfil } from './core/Perfil';
 import { moduloPorId } from './core/modulos';
 import { LecturaModulo } from './modulos/lectura/LecturaModulo';
+import { CumpleanosModulo } from './modulos/cumpleanos/CumpleanosModulo';
+import { FinanzasModulo } from './modulos/finanzas/FinanzasModulo';
 import { Usuarios } from './modulos/admin/Usuarios';
 import { Configuracion } from './modulos/admin/Configuracion';
 import { Proximamente } from './modulos/proximamente/Proximamente';
+import { PaginaPublica } from './publico/PaginaPublica';
 
 /** Componente de cada módulo activo. Los módulos nuevos se registran aquí. */
 const COMPONENTES: Partial<Record<string, () => JSX.Element>> = {
   lectura: LecturaModulo,
+  cumpleanos: CumpleanosModulo,
+  finanzas: FinanzasModulo,
   usuarios: Usuarios,
   configuracion: Configuracion,
 };
@@ -28,8 +33,22 @@ function RutaModulo() {
   return C && m.estado === 'activo' ? <C /> : <Proximamente modulo={m} />;
 }
 
+function AppPrivada() {
+  const { cargando, perfil } = useSesion();
+  if (cargando) return <Cargando texto="Abriendo Jeivi…" />;
+  if (!perfil) return <Login />;
+  return (
+    <Routes>
+      <Route path="/" element={<Lanzador />} />
+      <Route path="/perfil" element={<Perfil />} />
+      <Route path="/m/:id/*" element={<RutaModulo />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
 export default function App() {
-  const { cargando, perfil, iglesia } = useSesion();
+  const { iglesia } = useSesion();
 
   useEffect(() => {
     const r = document.documentElement.style;
@@ -38,15 +57,11 @@ export default function App() {
     document.title = `Jeivi · ${iglesia.nombreCorto}`;
   }, [iglesia]);
 
-  if (cargando) return <Cargando texto="Abriendo Jeivi…" />;
-  if (!perfil) return <Login />;
-
   return (
     <Routes>
-      <Route path="/" element={<Lanzador />} />
-      <Route path="/perfil" element={<Perfil />} />
-      <Route path="/m/:id/*" element={<RutaModulo />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
+      {/* Links públicos: la congregación los abre sin cuenta. */}
+      <Route path="/p/:token" element={<PaginaPublica />} />
+      <Route path="*" element={<AppPrivada />} />
     </Routes>
   );
 }
