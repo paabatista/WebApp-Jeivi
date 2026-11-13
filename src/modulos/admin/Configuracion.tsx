@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { explicarError } from '../../lib/errores';
 import { Layout } from '../../core/Layout';
 import { MODULOS, moduloPorId } from '../../core/modulos';
 import { IconoModulo } from '../../core/IconoModulo';
@@ -26,8 +27,8 @@ export function Configuracion() {
       await guardarDoc(`iglesias/${IGLESIA_ID}`, { ...f });
       setMsg('Configuración guardada.');
       setTimeout(() => setMsg(''), 2500);
-    } catch {
-      setError('No se pudo guardar. Solo el super admin puede cambiar la configuración.');
+    } catch (err) {
+      setError(explicarError(err));
     }
   }
 
@@ -39,7 +40,7 @@ export function Configuracion() {
     try {
       set('logoUrl', await guardarFoto(archivo, f, 'jeivi/marca', { autor: perfil, titulo: 'Logo de la iglesia' }));
     } catch (err) {
-      setError((err as Error).message);
+      setError(explicarError(err));
     } finally {
       setSubiendo(false);
     }
@@ -94,6 +95,18 @@ export function Configuracion() {
               </label>
             </div>
           </div>
+        </section>
+
+        <section className="tarjeta">
+          <h2>Seguridad</h2>
+          <label>
+            Cerrar sesión automáticamente tras
+            <select value={f.inactividadHoras === 2 ? 2 : 1} onChange={(e) => set('inactividadHoras', Number(e.target.value) === 2 ? 2 : 1)}>
+              <option value={1}>1 hora sin actividad</option>
+              <option value={2}>2 horas sin actividad</option>
+            </select>
+            <small className="suave">Se avisa 5 minutos antes. Al volver otro día también se pide entrar de nuevo.</small>
+          </label>
         </section>
 
         <section className="tarjeta">

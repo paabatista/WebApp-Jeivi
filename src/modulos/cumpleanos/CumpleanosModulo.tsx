@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { explicarError } from '../../lib/errores';
 import { Link, Navigate, Route, Routes, useNavigate, useSearchParams } from 'react-router-dom';
 import { Image as ImageIcon, MessageCircle, Pencil, Plus, Trash2 } from 'lucide-react';
 import { Layout } from '../../core/Layout';
@@ -213,7 +214,7 @@ function FormCumple({ inicial, alTerminar }: { inicial?: Cumple; alTerminar: () 
     try {
       setFoto(await guardarFoto(f, iglesia, 'jeivi/cumpleanos', { autor: perfil, titulo: `Foto de cumpleaños: ${nombre}` }));
     } catch (err) {
-      setError((err as Error).message);
+      setError(explicarError(err));
     } finally {
       setOcupado(false);
     }

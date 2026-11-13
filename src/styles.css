@@ -1747,3 +1747,20 @@ label {
   color: var(--primario);
   vertical-align: middle;
 }
+
+/* ---------- Aviso de inactividad ---------- */
+.aviso-inactividad {
+  position: sticky;
+  top: 56px;
+  z-index: 18;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  padding: 0.6rem 1rem;
+  background: #fff7e0;
+  color: #7a5200;
+  border-bottom: 1px solid #f5dc9a;
+  font-weight: 600;
+}

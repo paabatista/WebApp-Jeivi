@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { explicarError } from '../../lib/errores';
 import { Link, Navigate, Route, Routes } from 'react-router-dom';
 import { Download, MessageCircle, Paperclip, Plus, Trash2, Upload, X } from 'lucide-react';
 import { Layout, type Pestana } from '../../core/Layout';
@@ -610,7 +611,7 @@ function Pagos({ d }: { d: DatosFin }) {
         comprobante = await guardarComprobante(archivo, `Comprobante aporte · ${u.nombre} · ${c.nombre}`, `${RUTA_PAGOS}/${id}`, perfil);
       } catch (err) {
         setSubiendo(false);
-        return setError((err as Error).message);
+        return setError(explicarError(err));
       }
       setSubiendo(false);
     }
@@ -749,7 +750,7 @@ function Gastos({ d }: { d: DatosFin }) {
         comprobante = await guardarComprobante(archivo, `Comprobante gasto · ${concepto.nombre} · ${proveedor || fecha}`, `${RUTA_GASTOS}/${id}`, perfil);
       } catch (err) {
         setSubiendo(false);
-        return setError((err as Error).message);
+        return setError(explicarError(err));
       }
       setSubiendo(false);
     }

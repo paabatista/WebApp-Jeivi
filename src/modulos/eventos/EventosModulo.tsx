@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { explicarError } from '../../lib/errores';
 import { Link, Navigate, Route, Routes, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { CalendarDays, Check, ChevronLeft, ChevronRight, Clock, Image as ImageIcon, MapPin, MessageCircle, Pencil, Plus, Trash2, Users, X } from 'lucide-react';
 import { Layout } from '../../core/Layout';
@@ -236,7 +237,7 @@ function Editor({ inicial }: { inicial?: Evento }) {
     try {
       set('imagen', await guardarFoto(file, iglesia, 'jeivi/eventos', { autor: perfil, titulo: `Imagen de evento: ${f.titulo}` }));
     } catch (err) {
-      setError((err as Error).message);
+      setError(explicarError(err));
     } finally {
       setSubiendo(false);
     }

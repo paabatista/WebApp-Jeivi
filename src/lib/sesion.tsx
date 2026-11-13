@@ -41,6 +41,8 @@ export interface Iglesia {
   /** Módulos visibles en el lanzador. */
   modulosActivos: string[];
   cloudinary?: { cloudName: string; uploadPreset: string };
+  /** Horas sin actividad tras las que se cierra la sesión (1 o 2). */
+  inactividadHoras?: 1 | 2;
 }
 
 export const IGLESIA_POR_DEFECTO: Iglesia = {
@@ -62,9 +64,22 @@ export const IGLESIA_POR_DEFECTO: Iglesia = {
  */
 export type EstadoAcceso = 'ok' | 'verificar' | 'sinInvitacion' | null;
 
-/** Tiempo sin actividad tras el cual se cierra la sesión. */
-export const INACTIVIDAD_MS = 60 * 60 * 1000;
+/** Tiempo sin actividad tras el cual se cierra la sesión: 1 o 2 horas (se elige en Configuración). */
+const HORA_MS = 60 * 60 * 1000;
+/** Se avisa 5 minutos antes de cerrar. */
+export const AVISO_ANTES_MS = 5 * 60 * 1000;
 const CLAVE_ACTIVIDAD = 'jeivi-ultima-actividad';
+const CLAVE_LIMITE = 'jeivi-limite-inactividad';
+
+/** Último límite conocido (se guarda para aplicarlo aunque la configuración aún no haya cargado). */
+let limiteInactividad = (() => {
+  try {
+    const v = Number(localStorage.getItem(CLAVE_LIMITE));
+    return v === 2 * HORA_MS ? v : HORA_MS;
+  } catch {
+    return HORA_MS;
+  }
+})();
 
 function marcarActividad() {
   try {
@@ -90,6 +105,9 @@ interface Sesion {
   estadoAcceso: EstadoAcceso;
   /** Mensaje para la pantalla de login (ej. "se cerró por inactividad"). */
   aviso: string;
+  /** Milisegundos que faltan para cerrar la sesión por inactividad (solo en los últimos 5 minutos). */
+  porCerrar: number | null;
+  seguirConectado: () => void;
   puede: (minimo: Rol) => boolean;
   entrarGoogle: () => Promise<void>;
   entrarMicrosoft: () => Promise<void>;
@@ -123,6 +141,7 @@ export function SesionProvider({ children }: { children: ReactNode }) {
   const [cargandoPerfil, setCargandoPerfil] = useState(false);
   const [estadoAcceso, setEstadoAcceso] = useState<EstadoAcceso>(MODO_DEMO ? 'ok' : null);
   const [aviso, setAviso] = useState('');
+  const [porCerrar, setPorCerrar] = useState<number | null>(null);
   const [iglesia, setIglesia] = useState<Iglesia>(IGLESIA_POR_DEFECTO);
   const [verificacion, setVerificacion] = useState(0);
 
@@ -150,7 +169,7 @@ export function SesionProvider({ children }: { children: ReactNode }) {
     return onAuthStateChanged(auth, async (u) => {
       // Al volver después de más de 1 hora sin actividad (o al día siguiente) se pide entrar de nuevo.
       const ultima = ultimaActividad();
-      if (u && ultima && Date.now() - ultima > INACTIVIDAD_MS) {
+      if (u && ultima && Date.now() - ultima > limiteInactividad) {
         setAviso('Tu sesión se cerró por inactividad. Vuelve a entrar.');
         await signOut(auth);
         return;
@@ -165,27 +184,51 @@ export function SesionProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  // Cierre por inactividad mientras la app está abierta.
+  // Tiempo de cierre elegido en Configuración (1 o 2 horas).
+  useEffect(() => {
+    limiteInactividad = (iglesia.inactividadHoras === 2 ? 2 : 1) * HORA_MS;
+    try {
+      localStorage.setItem(CLAVE_LIMITE, String(limiteInactividad));
+    } catch {
+      /* sin almacenamiento: se usa el valor en memoria */
+    }
+  }, [iglesia.inactividadHoras]);
+
+  // Cierre por inactividad mientras la app está abierta (con aviso 5 minutos antes).
   useEffect(() => {
     if (MODO_DEMO || !usuario) return;
     let ultimoGuardado = 0;
+    let avisando = false;
     const actividad = () => {
       const ahora = Date.now();
-      if (ahora - ultimoGuardado > 30_000) {
+      if (avisando || ahora - ultimoGuardado > 30_000) {
         ultimoGuardado = ahora;
         marcarActividad();
+        if (avisando) {
+          avisando = false;
+          setPorCerrar(null);
+        }
       }
     };
     const eventos = ['pointerdown', 'keydown', 'scroll', 'touchstart', 'mousemove'] as const;
     eventos.forEach((e) => window.addEventListener(e, actividad, { passive: true }));
     const revisar = () => {
       const ultima = ultimaActividad();
-      if (ultima && Date.now() - ultima > INACTIVIDAD_MS) {
-        setAviso('Tu sesión se cerró por inactividad. Vuelve a entrar.');
+      if (!ultima) return;
+      const resta = limiteInactividad - (Date.now() - ultima);
+      if (resta <= 0) {
+        setPorCerrar(null);
+        setAviso(`Tu sesión se cerró tras ${limiteInactividad / HORA_MS === 2 ? '2 horas' : '1 hora'} sin actividad. Vuelve a entrar.`);
         void signOut(auth);
+      } else if (resta <= AVISO_ANTES_MS) {
+        avisando = true;
+        setPorCerrar(resta);
+      } else if (avisando) {
+        avisando = false;
+        setPorCerrar(null);
       }
     };
-    const intervalo = window.setInterval(revisar, 60_000);
+    const intervalo = window.setInterval(revisar, 15_000);
     document.addEventListener('visibilitychange', revisar);
     return () => {
       eventos.forEach((e) => window.removeEventListener(e, actividad));
@@ -257,6 +300,11 @@ export function SesionProvider({ children }: { children: ReactNode }) {
       iglesia,
       estadoAcceso,
       aviso,
+      porCerrar,
+      seguirConectado: () => {
+        marcarActividad();
+        setPorCerrar(null);
+      },
       puede: (minimo) => tieneNivel(perfil?.rol, minimo),
       entrarGoogle: async () => {
         setAviso('');
@@ -306,7 +354,7 @@ export function SesionProvider({ children }: { children: ReactNode }) {
         await guardarDoc(`users/${perfil.uid}`, cambios);
       },
     }),
-    [cargandoAuth, cargandoPerfil, usuario, perfil, iglesia, estadoAcceso, aviso],
+    [cargandoAuth, cargandoPerfil, usuario, perfil, iglesia, estadoAcceso, aviso, porCerrar],
   );
 
   return <Ctx.Provider value={valor}>{children}</Ctx.Provider>;

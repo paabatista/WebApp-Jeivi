@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { explicarError } from '../../lib/errores';
 import { ImagePlus, Plus, Trash2 } from 'lucide-react';
 import { guardarDoc } from '../../lib/datos';
 import { nuevoId, type Enlace } from '../../lib/enlaces';
@@ -106,7 +107,7 @@ export function RegistroCumple({ enlace }: { enlace: Enlace }) {
       }
       setListo(personas.map((p) => `${p.nombre.trim()} — ${textoFecha(partirFecha(p.fecha)!)}`));
     } catch (err) {
-      setError((err as Error).message || 'No se pudo guardar. Intenta de nuevo.');
+      setError(explicarError(err) || 'No se pudo guardar. Intenta de nuevo.');
     } finally {
       setEnviando(false);
     }

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { explicarError } from '../../lib/errores';
 import { useSearchParams } from 'react-router-dom';
 import { Plus, RotateCcw, Trash2, Upload } from 'lucide-react';
 import { useSesion } from '../../lib/sesion';
@@ -316,7 +317,7 @@ function BancoImagenes() {
       await guardarLista([...config.imagenes, ...nuevas]);
       setTitulo('');
     } catch (err) {
-      setError((err as Error).message);
+      setError(explicarError(err));
     } finally {
       setSubiendo(false);
     }

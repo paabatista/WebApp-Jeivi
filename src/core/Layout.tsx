@@ -13,7 +13,7 @@ export interface Pestana {
 }
 
 export function Layout({ modulo, pestanas, children }: { modulo?: Modulo; pestanas?: Pestana[]; children: ReactNode }) {
-  const { perfil, iglesia, salir } = useSesion();
+  const { perfil, iglesia, salir, porCerrar, seguirConectado } = useSesion();
   const [menu, setMenu] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const nav = useNavigate();
@@ -74,6 +74,16 @@ export function Layout({ modulo, pestanas, children }: { modulo?: Modulo; pestan
             </NavLink>
           ))}
         </nav>
+      )}
+      {porCerrar !== null && (
+        <div className="aviso-inactividad" role="alert">
+          <span>
+            Tu sesión se cerrará en {Math.max(1, Math.ceil(porCerrar / 60000))} min por inactividad.
+          </span>
+          <button className="boton pequeno" onClick={seguirConectado}>
+            Seguir conectado
+          </button>
+        </div>
       )}
       <main className="contenido">{children}</main>
     </div>

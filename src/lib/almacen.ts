@@ -130,7 +130,12 @@ export async function guardarArchivo(blob: Blob, o: OpcionesArchivo): Promise<Ar
     subidoPorNombre: o.autor.nombre,
   };
   const { id: _id, ...datos } = a;
-  await guardarDoc(`${RUTA_ARCHIVOS}/${id}`, datos, false);
+  try {
+    await guardarDoc(`${RUTA_ARCHIVOS}/${id}`, datos, false);
+  } catch (e) {
+    // El archivo ya está subido: se usa igual; solo faltó anotarlo en el historial (reglas sin publicar).
+    console.warn('No se pudo registrar el archivo en el historial', e);
+  }
   return a;
 }
 

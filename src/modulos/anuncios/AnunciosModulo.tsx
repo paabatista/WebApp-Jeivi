@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { explicarError } from '../../lib/errores';
 import { Link, Navigate, Route, Routes, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Eye, EyeOff, Image as ImageIcon, Mail, MessageCircle, Pencil, Pin, Plus, Trash2 } from 'lucide-react';
 import { Layout } from '../../core/Layout';
@@ -199,7 +200,7 @@ function Editor({ inicial }: { inicial?: Anuncio }) {
     try {
       setImagen(await guardarFoto(f, iglesia, 'jeivi/anuncios', { autor: perfil, titulo: `Imagen de anuncio: ${titulo}` }));
     } catch (err) {
-      setError((err as Error).message);
+      setError(explicarError(err));
     } finally {
       setSubiendo(false);
     }
