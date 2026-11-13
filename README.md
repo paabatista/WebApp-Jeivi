@@ -37,6 +37,8 @@ La **congregación no tiene usuario**. Un diácono genera un **link** desde el m
 2. **Cargos:** lo que le toca a cada diácono. Dos formas: *repartir un recibo* (ej. luz $100 entre 4 = $25 c/u, y opcionalmente se registra como gasto) o *monto fijo* por diácono.
 3. **Aportes:** el pastor registra lo que cada diácono entregó (efectivo, Yappy, transferencia).
 6. **Estado de cuenta:** cada diácono, al entrar a Jeivi, ve **“¡Estás al día!”** o **“Debes $25.00 — Luz (nov 2026)”**. Los pagos se aplican a los meses más antiguos.
+8. **Proyectos e inversiones:** compras grandes o mejoras (ej. la PC para los directos) que **no cuentan como gastos**: presupuesto, lista de compras (estimado vs. real, con factura), fondos (ofrendas especiales, donaciones…) y avance. Con *Pedir aporte a diáconos* se crea una cuota para el proyecto que entra en el estado de cuenta de cada diácono y suma a los fondos.
+9. **Inventario de bienes:** base de datos de lo que tiene la iglesia (equipos, sonido, instrumentos, mobiliario…) con costo, fecha, proveedor, ubicación, responsable, estado, garantía, foto y factura. Lo comprado en un proyecto pasa al inventario con un clic. Exportable a Excel.
 7. **Resumen:** gastos, aportes y pendiente por mes; estado de cada diácono con botón de recordatorio por WhatsApp; **Descargar Excel**.
 
 ## Probar en tu computadora

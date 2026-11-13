@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { explicarError } from '../../lib/errores';
-import { Link, Navigate, Route, Routes } from 'react-router-dom';
+import { Link, Navigate, Route, Routes, useSearchParams } from 'react-router-dom';
 import { Download, MessageCircle, Paperclip, Plus, Trash2, Upload, X } from 'lucide-react';
 import { Layout, type Pestana } from '../../core/Layout';
 import { Cargando } from '../../core/Cargando';
@@ -38,19 +38,23 @@ import { exportarExcel } from './exportar';
 import { STORAGE_ACTIVO, guardarComprobante } from '../../lib/almacen';
 import { ejecutarLote, type OperacionLote } from '../../lib/datos';
 import { Importar } from './importar/Importar';
+import { DetalleProyecto, Proyectos } from './proyectos/Proyectos';
+import { Inventario } from './proyectos/Inventario';
 import { ListaActividad } from '../historial/HistorialModulo';
 
 const modulo = moduloPorId('finanzas')!;
 
 export function FinanzasModulo() {
   const { perfil, puede } = useSesion();
-  const pestanas: Pestana[] = [{ a: '/m/finanzas', texto: 'Mi estado de cuenta', fin: true }];
+  const pestanas: Pestana[] = [{ a: '/m/finanzas', texto: 'Mi cuenta', fin: true }];
   if (puede('pastor')) {
     pestanas.push(
       { a: '/m/finanzas/resumen', texto: 'Resumen' },
       { a: '/m/finanzas/cargos', texto: 'Cargos' },
       { a: '/m/finanzas/pagos', texto: 'Aportes' },
       { a: '/m/finanzas/gastos', texto: 'Gastos' },
+      { a: '/m/finanzas/proyectos', texto: 'Proyectos' },
+      { a: '/m/finanzas/inventario', texto: 'Inventario' },
       { a: '/m/finanzas/conceptos', texto: 'Conceptos' },
       { a: '/m/finanzas/importar', texto: 'Importar Excel' },
       { a: '/m/finanzas/historial', texto: 'Historial' },
@@ -100,6 +104,9 @@ function AdminFinanzas() {
       <Route path="gastos" element={<Gastos d={d} />} />
       <Route path="conceptos" element={<Conceptos d={d} />} />
       <Route path="importar" element={<Importar d={d} />} />
+      <Route path="proyectos" element={<Proyectos d={d} />} />
+      <Route path="proyectos/:id" element={<DetalleProyecto d={d} />} />
+      <Route path="inventario" element={<Inventario />} />
       <Route path="historial" element={<ListaActividad soloModulo="finanzas" />} />
       <Route path="*" element={<Navigate to="/m/finanzas" replace />} />
     </Routes>
@@ -331,7 +338,8 @@ function Resumen({ d }: { d: DatosFin }) {
 function Cargos({ d }: { d: DatosFin }) {
   const { perfil } = useSesion();
   const activos = d.conceptos.filter((c) => c.activo);
-  const [conceptoId, setConceptoId] = useState(activos[0]?.id || '');
+  const [params] = useSearchParams();
+  const [conceptoId, setConceptoId] = useState(params.get('concepto') || activos[0]?.id || '');
   const [periodo, setPeriodo] = useState(periodoActual());
   const [modo, setModo] = useState<'fijo' | 'repartir'>('repartir');
   const [monto, setMonto] = useState('');

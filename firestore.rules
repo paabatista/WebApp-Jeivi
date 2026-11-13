@@ -233,6 +233,16 @@ service cloud.firestore {
       match /finGastos/{id} {
         allow read, write: if equipo(ig, 80);
       }
+      // Proyectos e inversiones (no son gastos corrientes) e inventario de bienes: pastores y super admin.
+      match /finProyectos/{id} {
+        allow read, write: if equipo(ig, 80);
+      }
+      match /finProyectoMovs/{id} {
+        allow read, write: if equipo(ig, 80);
+      }
+      match /bienes/{id} {
+        allow read, write: if equipo(ig, 80);
+      }
     }
   }
 }

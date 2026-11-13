@@ -1765,3 +1765,79 @@ label {
   border-bottom: 1px solid #f5dc9a;
   font-weight: 600;
 }
+
+/* ---------- Proyectos e inventario ---------- */
+.proyecto {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  text-decoration: none;
+  color: var(--texto);
+  overflow: hidden;
+}
+.proyecto:hover {
+  box-shadow: 0 0 0 2px var(--primario), var(--sombra);
+}
+.proyecto h3 {
+  margin: 0;
+}
+.proyecto-imagen {
+  width: calc(100% + 2.5rem);
+  margin: -1.25rem -1.25rem 0;
+  height: 150px;
+  object-fit: cover;
+}
+.proy-completado {
+  background: #e8f6ec;
+  color: var(--exito);
+}
+.proy-cancelado {
+  background: #eef2f7;
+  color: #475569;
+}
+.proy-comprando,
+.proy-recaudando {
+  background: #fff7e0;
+  color: #7a5200;
+}
+.marcar-comprado {
+  margin: 1rem 0;
+  box-shadow: 0 0 0 2px var(--acento), var(--sombra);
+}
+.miniatura-bien {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+.bien-reparacion {
+  background: #fdecec;
+  color: var(--error);
+}
+.bien-nuevo {
+  background: #e8f6ec;
+  color: var(--exito);
+}
+.bien-baja {
+  background: #eef2f7;
+  color: #475569;
+}
+
+/* Pestañas: una sola línea; si no caben, se deslizan */
+.pestanas {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.pestanas::-webkit-scrollbar {
+  display: none;
+}
+.pestanas a,
+.pestanas-movil a {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.barra-marca {
+  flex-shrink: 0;
+}

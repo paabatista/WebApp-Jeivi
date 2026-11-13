@@ -158,3 +158,51 @@ export async function descargarPlantilla() {
   );
   await descargar(libro, 'plantilla-finanzas-jeivi.xlsx');
 }
+
+/** Inventario de bienes en Excel. */
+export async function exportarInventario(bienes: import('./proyectos/datos').Bien[], iglesia: string) {
+  const { ESTADOS_BIEN } = await import('./proyectos/datos');
+  const { libro, hoja } = await nuevoLibro();
+  hoja(
+    'Inventario',
+    [
+      { header: 'Bien', key: 'nombre', width: 28 },
+      { header: 'Categoría', key: 'categoria', width: 22 },
+      { header: 'Marca', key: 'marca', width: 14 },
+      { header: 'Modelo', key: 'modelo', width: 16 },
+      { header: 'N.º de serie', key: 'serie', width: 18 },
+      { header: 'Cantidad', key: 'cantidad', width: 10 },
+      { header: 'Costo', key: 'costo', width: 12, dinero: true },
+      { header: 'Fecha de compra', key: 'fecha', width: 14 },
+      { header: 'Proveedor', key: 'proveedor', width: 18 },
+      { header: 'Ubicación', key: 'ubicacion', width: 18 },
+      { header: 'Responsable', key: 'responsable', width: 18 },
+      { header: 'Estado', key: 'estado', width: 14 },
+      { header: 'Garantía hasta', key: 'garantia', width: 14 },
+      { header: 'Proyecto', key: 'proyecto', width: 22 },
+      { header: 'Notas', key: 'notas', width: 30 },
+      { header: 'Factura', key: 'factura', width: 30 },
+      ID,
+    ],
+    bienes.map((b) => ({
+      nombre: b.nombre,
+      categoria: b.categoria,
+      marca: b.marca || '',
+      modelo: b.modelo || '',
+      serie: b.serie || '',
+      cantidad: b.cantidad,
+      costo: b.costo,
+      fecha: b.fechaCompra || '',
+      proveedor: b.proveedor || '',
+      ubicacion: b.ubicacion || '',
+      responsable: b.responsable || '',
+      estado: ESTADOS_BIEN[b.estado],
+      garantia: b.garantiaHasta || '',
+      proyecto: b.proyectoNombre || '',
+      notas: b.notas || b.descripcion || '',
+      factura: b.factura?.url.startsWith('http') ? b.factura.url : b.factura ? '(adjunta en Jeivi)' : '',
+      id: b.id,
+    })),
+  );
+  await descargar(libro, `inventario-${iglesia.replace(/[^\p{L}\d]+/gu, '-').toLowerCase()}-${new Date().toISOString().slice(0, 10)}.xlsx`);
+}
