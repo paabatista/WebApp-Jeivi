@@ -57,7 +57,7 @@ export function LecturaPublica({ enlace }: { enlace: Enlace }) {
     try {
       await guardarDoc(
         `${RUTA_SUSCRIPTORES}/${nuevoId(16)}`,
-        { nombre: nombre.trim(), email: correo, whatsapp: tel, enlace: enlace.id, activo: true, creado: new Date().toISOString() },
+        { nombre: nombre.trim(), email: correo, whatsapp: tel, enlace: enlace.id, activo: true, creado: new Date().toISOString(), temas: ['lectura'] },
         false,
       );
       setEstadoForm('listo');

@@ -25,8 +25,10 @@ Repositorio en GitHub, deploy en Vercel, datos en Firebase. Commits con `6253381
 
 ## Pendiente (siguientes módulos)
 
-- Hechos: Lectura, Cumpleaños, Finanzas, Usuarios, Configuración.
-- **Eventos, Anuncios / tablero informativo (link público para suscribirse), Solicitudes.**
+- Hechos: Lectura, Cumpleaños, Finanzas, Eventos, Anuncios, Solicitudes, Usuarios, Configuración.
+- Suscriptores (`iglesias/{ig}/suscriptores`) llevan `temas: ['lectura'|'anuncios']`; sin el campo = lectura.
+- `/api/enviar-anuncio` verifica el ID token de Firebase y el nivel (≥ diácono) con `verificarUsuario`.
+- `GeneradorBanner` es reutilizable (props `etiquetas`, `separarComas`) para lectura, anuncios y eventos.
 - Fotos: con Cloudinary configurado se suben allí; si no, se guardan reducidas (~520 px) como data URL en el registro (`src/lib/fotos.ts`).
 
 ## Comandos

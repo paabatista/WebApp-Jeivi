@@ -27,6 +27,8 @@ export interface OpcionesBanner {
   fecha: string;
   pie: string;
   logo?: HTMLImageElement | null;
+  /** Poner cada elemento separado por coma en su propia línea (citas bíblicas). */
+  separarComas?: boolean;
 }
 
 function cubrir(ctx: CanvasRenderingContext2D, img: HTMLImageElement, w: number, h: number) {
@@ -173,7 +175,7 @@ export function dibujarBanner(ctx: CanvasRenderingContext2D, o: OpcionesBanner) 
   }
 
   // La lectura: cada pasaje separado por coma va en su propia línea si cabe.
-  const textoLectura = o.lectura.split(/\s*,\s*/).join('\n');
+  const textoLectura = o.separarComas === false ? o.lectura : o.lectura.split(/\s*,\s*/).join('\n');
   const maxL = o.plantilla === 'minimal' ? 5 : 6;
   const { tamano, lineas } = ajustar(
     ctx,

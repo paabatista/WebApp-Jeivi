@@ -20,6 +20,9 @@ interface Props {
   /** Texto para el mensaje de WhatsApp. */
   textoMensaje: (d: DatosBanner) => string;
   nombreArchivo: string;
+  /** Cambia los nombres de los campos (para reutilizarlo en anuncios, eventos…). */
+  etiquetas?: Partial<Record<keyof DatosBanner, string>>;
+  separarComas?: boolean;
 }
 
 let fuentesListas: Promise<unknown> | null = null;
@@ -51,7 +54,7 @@ export function MiniFondo({ fondo, activo, onClick }: { fondo: Fondo; activo: bo
   );
 }
 
-export function GeneradorBanner({ inicial, pie, imagenesBanco, textoMensaje, nombreArchivo }: Props) {
+export function GeneradorBanner({ inicial, pie, imagenesBanco, textoMensaje, nombreArchivo, etiquetas = {}, separarComas = true }: Props) {
   const { iglesia } = useSesion();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [datos, setDatos] = useState<DatosBanner>(inicial);
@@ -102,6 +105,7 @@ export function GeneradorBanner({ inicial, pie, imagenesBanco, textoMensaje, nom
       if (conLogo && iglesia.logoUrl) logo = await cargarImagen(iglesia.logoUrl).catch(() => null);
       if (cancelado) return;
       dibujarBanner(ctx, {
+        separarComas,
         w,
         h,
         fondo,
@@ -117,7 +121,7 @@ export function GeneradorBanner({ inicial, pie, imagenesBanco, textoMensaje, nom
     return () => {
       cancelado = true;
     };
-  }, [datos, formato, plantilla, fondoSel, fotoPropia, temaFoto, oscurecer, conLogo, iglesia, pie, imagenesBanco, w, h]);
+  }, [datos, formato, plantilla, fondoSel, fotoPropia, temaFoto, oscurecer, conLogo, iglesia, pie, imagenesBanco, w, h, separarComas]);
 
   const mensaje = useMemo(() => textoMensaje(datos), [datos, textoMensaje]);
 
@@ -275,23 +279,23 @@ export function GeneradorBanner({ inicial, pie, imagenesBanco, textoMensaje, nom
 
         <h3>Textos</h3>
         <label>
-          Encabezado
+          {etiquetas.etiqueta ?? 'Encabezado'}
           <input {...campo('etiqueta')} />
         </label>
         <label>
-          Título
+          {etiquetas.titulo ?? 'Título'}
           <input {...campo('titulo')} />
         </label>
         <label>
-          Lectura
+          {etiquetas.lectura ?? 'Lectura'}
           <textarea rows={2} {...campo('lectura')} />
         </label>
         <label>
-          Nota o versículo (opcional)
+          {etiquetas.nota ?? 'Nota o versículo (opcional)'}
           <textarea rows={2} {...campo('nota')} placeholder="Ej. Lámpara es a mis pies tu palabra — Salmo 119:105" />
         </label>
         <label>
-          Fecha
+          {etiquetas.fecha ?? 'Fecha'}
           <input {...campo('fecha')} />
         </label>
       </div>

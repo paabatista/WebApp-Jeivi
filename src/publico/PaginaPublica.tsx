@@ -6,6 +6,9 @@ import { useSesion } from '../lib/sesion';
 import { Cargando } from '../core/Cargando';
 import { LecturaPublica } from './LecturaPublica';
 import { RegistroCumple } from '../modulos/cumpleanos/RegistroCumple';
+import { TableroPublico } from './TableroPublico';
+import { InscripcionEvento } from './InscripcionEvento';
+import { SolicitudPublica } from './SolicitudPublica';
 
 /** Envoltura de las páginas públicas: marca de la iglesia, sin menú ni login. */
 export function MarcoPublico({ children }: { children: ReactNode }) {
@@ -58,6 +61,9 @@ export function PaginaPublica() {
     <MarcoPublico>
       {enlace.modulo === 'lectura' && <LecturaPublica enlace={enlace} />}
       {enlace.modulo === 'cumpleanos' && <RegistroCumple enlace={enlace} />}
+      {enlace.modulo === 'anuncios' && <TableroPublico enlace={enlace} />}
+      {enlace.modulo === 'eventos' && <InscripcionEvento enlace={enlace} />}
+      {enlace.modulo === 'solicitudes' && <SolicitudPublica enlace={enlace} />}
     </MarcoPublico>
   );
 }

@@ -6,7 +6,7 @@ import { capitalizar, formatoCorto, formatoLargo } from '../../lib/fechas';
 import { useSesion } from '../../lib/sesion';
 import { DIAS_SEMANA } from './plan';
 import { useLectura } from './useLectura';
-import { RUTA_SUSCRIPTORES, numeroWhatsApp, type Suscriptor } from './suscriptores';
+import { RUTA_SUSCRIPTORES, numeroWhatsApp, tieneTema, type Suscriptor } from './suscriptores';
 
 /** Link público de la lectura + lista de personas suscritas (para enviarles la lectura por WhatsApp). */
 export function SuscriptoresLectura() {
@@ -15,7 +15,10 @@ export function SuscriptoresLectura() {
   const [lista, setLista] = useState<Suscriptor[]>([]);
   const [filtro, setFiltro] = useState('');
 
-  useEffect(() => escucharColeccion<Suscriptor>(RUTA_SUSCRIPTORES, (d) => setLista([...d].sort((a, b) => a.nombre.localeCompare(b.nombre)))), []);
+  useEffect(
+    () => escucharColeccion<Suscriptor>(RUTA_SUSCRIPTORES, (d) => setLista(d.filter((s) => tieneTema(s, 'lectura')).sort((a, b) => a.nombre.localeCompare(b.nombre)))),
+    [],
+  );
 
   const mensajeHoy = useMemo(() => {
     const e = lect.estado;

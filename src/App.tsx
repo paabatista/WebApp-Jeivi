@@ -10,6 +10,9 @@ import { moduloPorId } from './core/modulos';
 import { LecturaModulo } from './modulos/lectura/LecturaModulo';
 import { CumpleanosModulo } from './modulos/cumpleanos/CumpleanosModulo';
 import { FinanzasModulo } from './modulos/finanzas/FinanzasModulo';
+import { AnunciosModulo } from './modulos/anuncios/AnunciosModulo';
+import { EventosModulo } from './modulos/eventos/EventosModulo';
+import { SolicitudesModulo } from './modulos/solicitudes/SolicitudesModulo';
 import { Usuarios } from './modulos/admin/Usuarios';
 import { Configuracion } from './modulos/admin/Configuracion';
 import { Proximamente } from './modulos/proximamente/Proximamente';
@@ -20,6 +23,9 @@ const COMPONENTES: Partial<Record<string, () => JSX.Element>> = {
   lectura: LecturaModulo,
   cumpleanos: CumpleanosModulo,
   finanzas: FinanzasModulo,
+  anuncios: AnunciosModulo,
+  eventos: EventosModulo,
+  solicitudes: SolicitudesModulo,
   usuarios: Usuarios,
   configuracion: Configuracion,
 };

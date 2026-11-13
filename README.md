@@ -12,8 +12,10 @@ Hecha para **Ministerio Jesucristo Imperio de Vida**, preparada para que más ad
 | Lectura Bíblica | ✅ | Plan de 6 meses, banner para WhatsApp, link público para ver la lectura y suscribirse, correo diario |
 | Cumpleaños | ✅ | Próximos, calendario, registros, banner con foto, link público de registro (persona + hijos + foto), exportar |
 | Finanzas | ✅ | Aportes de los diáconos (luz, alquiler, mantenimiento…), gastos con campos libres, estado de cuenta, Excel |
+| Eventos | ✅ | Próximos, calendario mensual, responsables, tareas, banner, link de inscripción con cupo y lista de inscritos |
+| Anuncios | ✅ | Tablero informativo, anuncios con imagen y vigencia, banner, link público del tablero, suscripción a avisos y envío por correo |
+| Solicitudes | ✅ | Oración, visitas, consejería… por link público; bandeja con estados, responsable, notas de seguimiento; confidenciales solo para pastores |
 | Usuarios / Configuración | ✅ | Aprobar cuentas y niveles · nombre, colores, logo, módulos, Cloudinary |
-| Eventos, Anuncios / tablero, Solicitudes | 🔜 | Próximamente |
 
 ### Quién usa Jeivi
 
@@ -26,7 +28,7 @@ Solo el **equipo** tiene usuario:
 | **Diácono** | Entra a los módulos, edita lo básico, crea banners y **links de registro**, ve **su estado de cuenta** |
 | **Pendiente** | Cuenta nueva: no ve nada hasta que un pastor la aprueba como diácono |
 
-La **congregación no tiene usuario**. Un diácono genera un **link** desde el módulo (Lectura → *Link y suscriptores*, Cumpleaños → *Link de registro*) y lo comparte por WhatsApp. Quien lo abre solo ve ese formulario: no puede ver ni modificar ningún dato. Los links se pueden desactivar en cualquier momento.
+La **congregación no tiene usuario**. Un diácono genera un **link** desde el módulo (Lectura, Cumpleaños, Anuncios, Solicitudes, o dentro de cada Evento) y lo comparte por WhatsApp. Quien lo abre solo ve ese formulario: no puede ver ni modificar ningún dato. Los links se pueden desactivar en cualquier momento.
 
 ### Finanzas: aportes de los diáconos
 

@@ -78,7 +78,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const vistos = new Set<string>();
       destinatarios = [
         ...usuarios.docs.map((d) => ({ clave: `u:${d.id}`, email: String(d.get('email') || ''), nombre: String(d.get('nombre') || '') })),
-        ...suscriptores.docs.map((d) => ({ clave: `s:${d.id}`, email: String(d.get('email') || ''), nombre: String(d.get('nombre') || '') })),
+        ...suscriptores.docs
+          .filter((d) => {
+            const temas: string[] = d.get('temas') || [];
+            return !temas.length || temas.includes('lectura');
+          })
+          .map((d) => ({ clave: `s:${d.id}`, email: String(d.get('email') || ''), nombre: String(d.get('nombre') || '') })),
       ].filter((d) => {
         const e = d.email.toLowerCase();
         if (!e.includes('@') || vistos.has(e)) return false;

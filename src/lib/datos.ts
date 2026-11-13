@@ -69,7 +69,7 @@ export function escucharDoc<T = DocumentData>(ruta: string, cb: (d: T | null) =>
 export function escucharColeccion<T = DocumentData>(
   ruta: string,
   cb: (docs: (T & { id: string })[]) => void,
-  filtro?: [campo: string, valor: string],
+  filtro?: [campo: string, valor: string | number | boolean],
 ): () => void {
   if (MODO_DEMO) {
     const emitir = () => {

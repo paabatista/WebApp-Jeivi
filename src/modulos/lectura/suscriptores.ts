@@ -10,7 +10,13 @@ export interface Suscriptor {
   enlace: string;
   activo: boolean;
   creado: string;
+  /** A qué se suscribió. Sin el campo = solo lectura (registros antiguos). */
+  temas?: Tema[];
 }
+
+export type Tema = 'lectura' | 'anuncios';
+
+export const tieneTema = (s: Pick<Suscriptor, 'temas'>, t: Tema) => (s.temas?.length ? s.temas.includes(t) : t === 'lectura');
 
 export const RUTA_SUSCRIPTORES = `iglesias/${IGLESIA_ID}/suscriptores`;
 

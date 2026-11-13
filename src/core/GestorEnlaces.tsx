@@ -6,21 +6,35 @@ import { DESCRIPCION_ENLACE, RUTA_ENLACES, crearEnlace, urlEnlace, type Enlace, 
 import { formatoCorto } from '../lib/fechas';
 
 /** Lista y crea los links públicos de un módulo (para compartir por WhatsApp). */
-export function GestorEnlaces({ modulo, mensaje }: { modulo: ModuloEnlace; mensaje: string }) {
+export function GestorEnlaces({
+  modulo,
+  mensaje,
+  eventoId,
+  tituloInicial = '',
+  alCrear,
+}: {
+  modulo: ModuloEnlace;
+  mensaje: string;
+  eventoId?: string;
+  tituloInicial?: string;
+  /** Se ejecuta después de crear un link (ej. marcar el evento como público). */
+  alCrear?: () => Promise<void> | void;
+}) {
   const { perfil, iglesia, puede } = useSesion();
   const [enlaces, setEnlaces] = useState<Enlace[]>([]);
-  const [titulo, setTitulo] = useState('');
+  const [titulo, setTitulo] = useState(tituloInicial);
   const [aviso, setAviso] = useState('');
 
   useEffect(
-    () => escucharColeccion<Enlace>(RUTA_ENLACES, (d) => setEnlaces([...d].sort((a, b) => b.creado.localeCompare(a.creado))), ['modulo', modulo]),
-    [modulo],
+    () => escucharColeccion<Enlace>(RUTA_ENLACES, (d) => setEnlaces(d.filter((e) => !eventoId || e.eventoId === eventoId).sort((a, b) => b.creado.localeCompare(a.creado))), ['modulo', modulo]),
+    [modulo, eventoId],
   );
 
   async function crear() {
     if (!perfil) return;
-    await crearEnlace(modulo, titulo, perfil);
-    setTitulo('');
+    await alCrear?.();
+    await crearEnlace(modulo, titulo || tituloInicial, perfil, eventoId);
+    setTitulo(tituloInicial);
   }
 
   async function copiar(e: Enlace) {

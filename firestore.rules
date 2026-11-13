@@ -3,7 +3,8 @@ rules_version = '2';
 // Reglas de seguridad de Jeivi.
 // Usuarios (solo el equipo): superadmin(100) > pastor(80) > diacono(50) > pendiente(10).
 // La congregación NO tiene usuario: solo puede CREAR registros a través de un link activo
-// (suscribirse a la lectura, registrar cumpleaños). Nunca puede leer datos.
+// (suscribirse, registrar cumpleaños, inscribirse a un evento, enviar una solicitud).
+// Solo puede leer lo que es público a propósito: lectura del día, anuncios y eventos marcados como públicos.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -87,8 +88,9 @@ service cloud.firestore {
         allow read, update: if equipo(ig, 50);
         allow delete: if equipo(ig, 80);
         allow create: if equipo(ig, 50) || (
-          request.resource.data.keys().hasOnly(['nombre', 'email', 'whatsapp', 'enlace', 'activo', 'creado'])
-          && enlaceValido(ig, request.resource.data.enlace, 'lectura')
+          request.resource.data.keys().hasOnly(['nombre', 'email', 'whatsapp', 'enlace', 'activo', 'creado', 'temas'])
+          && (enlaceValido(ig, request.resource.data.enlace, 'lectura') || enlaceValido(ig, request.resource.data.enlace, 'anuncios'))
+          && (!('temas' in request.resource.data) || (request.resource.data.temas is list && request.resource.data.temas.size() <= 2))
           && texto(request.resource.data.nombre, 1, 80)
           && texto(request.resource.data.email, 0, 120)
           && texto(request.resource.data.whatsapp, 0, 20)
@@ -111,6 +113,56 @@ service cloud.firestore {
           && request.resource.data.mes is int && request.resource.data.mes >= 1 && request.resource.data.mes <= 12
           && texto(request.resource.data.foto, 0, 400000)
           && request.resource.data.parentesco in ['titular', 'hijo']
+        );
+      }
+
+      // ----- Anuncios / tablero -----
+      // Los marcados como públicos los ve cualquiera (tablero del link); el resto solo el equipo.
+      match /anuncios/{id} {
+        allow read: if resource.data.publico == true || equipo(ig, 50);
+        allow create, update: if equipo(ig, 50);
+        allow delete: if equipo(ig, 80);
+      }
+
+      // ----- Eventos -----
+      match /eventos/{id} {
+        allow read: if resource.data.publico == true || equipo(ig, 50);
+        allow create, update: if equipo(ig, 50);
+        allow delete: if equipo(ig, 80);
+      }
+      match /inscripciones/{id} {
+        allow read, update: if equipo(ig, 50);
+        allow delete: if equipo(ig, 80);
+        allow create: if equipo(ig, 50) || (
+          request.resource.data.keys().hasOnly(['eventoId', 'nombre', 'telefono', 'email', 'personas', 'nota', 'enlace', 'creado'])
+          && enlaceValido(ig, request.resource.data.enlace, 'eventos')
+          && get(/databases/$(database)/documents/iglesias/$(ig)/enlaces/$(request.resource.data.enlace)).data.eventoId == request.resource.data.eventoId
+          && texto(request.resource.data.nombre, 1, 80)
+          && texto(request.resource.data.telefono, 0, 20)
+          && texto(request.resource.data.email, 0, 120)
+          && texto(request.resource.data.nota, 0, 300)
+          && request.resource.data.personas is int && request.resource.data.personas >= 1 && request.resource.data.personas <= 20
+        );
+      }
+
+      // ----- Solicitudes -----
+      // Las confidenciales solo las ven pastores y super admin.
+      match /solicitudes/{id} {
+        allow read, update: if equipo(ig, 80) || (equipo(ig, 50) && resource.data.confidencial == false);
+        allow delete: if equipo(ig, 80);
+        allow create: if equipo(ig, 50) || (
+          request.resource.data.keys().hasOnly(['tipo', 'nombre', 'telefono', 'email', 'mensaje', 'confidencial', 'estado',
+                                                'seguimiento', 'origen', 'enlace', 'creado'])
+          && request.resource.data.origen == 'link'
+          && request.resource.data.estado == 'nueva'
+          && request.resource.data.seguimiento.size() == 0
+          && request.resource.data.confidencial is bool
+          && enlaceValido(ig, request.resource.data.enlace, 'solicitudes')
+          && texto(request.resource.data.tipo, 1, 60)
+          && texto(request.resource.data.nombre, 1, 80)
+          && texto(request.resource.data.telefono, 0, 20)
+          && texto(request.resource.data.email, 0, 120)
+          && texto(request.resource.data.mensaje, 1, 2000)
         );
       }
 
