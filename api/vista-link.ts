@@ -76,12 +76,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   let vista: Vista | null = null;
   let iglesia = IGLESIA_POR_DEFECTO;
+  // Diagnóstico (sin datos sensibles): token-invalido | sin-enlace | ok | error
+  let diag = 'token-invalido';
   if (/^[A-Za-z0-9_-]{6,64}$/.test(token)) {
     try {
       const ig = (await adminDb().doc(`iglesias/${IGLESIA_ID}`).get()).data();
       if (ig?.nombre) iglesia = ig.nombre;
       vista = await vistaDelLink(token, iglesia);
+      diag = vista ? 'ok' : 'sin-enlace';
     } catch (e) {
+      diag = 'error';
       console.error('vista-link', e);
     }
   }
@@ -105,6 +109,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.setHeader('X-Jeivi-Vista', diag);
   // Unos minutos en caché: si se desactiva el link o cambia el evento, se nota pronto.
   res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=300, stale-while-revalidate=600');
   return res.send(html);
