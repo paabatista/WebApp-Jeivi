@@ -1841,3 +1841,46 @@ label {
 .barra-marca {
   flex-shrink: 0;
 }
+
+/* ---------- Importar: a dónde va el Excel ---------- */
+.destinos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 0.75rem;
+}
+.destino {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  text-align: left;
+  padding: 1rem;
+  border: 2px solid var(--borde);
+  border-radius: 14px;
+  background: var(--superficie);
+  color: var(--texto);
+  cursor: pointer;
+  font: inherit;
+}
+.destino:hover {
+  border-color: var(--primario);
+}
+.destino.activo {
+  border-color: var(--primario);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primario) 18%, transparent);
+}
+.destino strong {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.destino .suave {
+  font-size: 0.85rem;
+}
+.nota-compra {
+  display: block;
+  max-width: 420px;
+}
+tr.omitida td {
+  color: #94a3b8;
+}

@@ -53,7 +53,10 @@ function separarCSV(textoCSV: string): Celda[][] {
   return filas;
 }
 
-/** Lee un .xlsx o .csv y devuelve sus hojas como tablas. */
+/** Tipos de archivo que acepta el botón de subir. */
+export const ACEPTA_ARCHIVOS = '.xlsx,.xlsm,.xls,.csv,.txt';
+
+/** Lee un .xlsx/.xlsm o .csv y devuelve sus hojas como tablas. */
 export async function leerArchivo(archivo: File): Promise<Hoja[]> {
   const nombre = archivo.name.toLowerCase();
   if (nombre.endsWith('.csv') || nombre.endsWith('.txt')) {

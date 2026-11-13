@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { Download, Image as ImageIcon, Paperclip, Pencil, Plus } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Download, FileSpreadsheet, Image as ImageIcon, Paperclip, Pencil, Plus } from 'lucide-react';
 import { Cargando } from '../../../core/Cargando';
 import { escucharColeccion, guardarDoc } from '../../../lib/datos';
 import { nuevoId } from '../../../lib/enlaces';
@@ -50,6 +51,9 @@ export function Inventario() {
           <p className="suave">Todo lo que tiene la iglesia: equipos, sonido, instrumentos, mobiliario… con su costo, ubicación y responsable.</p>
         </div>
         <div className="acciones">
+          <Link className="boton" to="/m/finanzas/importar?destino=inventario">
+            <FileSpreadsheet size={16} /> Importar Excel
+          </Link>
           <button className="boton" onClick={() => exportarInventario(bienes, iglesia.nombre)}>
             <Download size={16} /> Descargar Excel
           </button>

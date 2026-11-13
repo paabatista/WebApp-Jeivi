@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { CheckCircle2, Image as ImageIcon, Package, Paperclip, Pencil, Plus, Trash2, Users } from 'lucide-react';
+import { CheckCircle2, FileSpreadsheet, Image as ImageIcon, Package, Paperclip, Pencil, Plus, Trash2, Users } from 'lucide-react';
 import { Cargando } from '../../../core/Cargando';
 import { borrarDoc, escucharColeccion, guardarDoc } from '../../../lib/datos';
 import { nuevoId } from '../../../lib/enlaces';
@@ -426,9 +426,14 @@ function Compras({ proyecto, compras }: { proyecto: Proyecto; compras: MovProyec
 
   return (
     <section className="tarjeta">
-      <h2 className="con-icono">
-        <Package size={20} /> Lista de compras
-      </h2>
+      <div className="fila-entre">
+        <h2 className="con-icono">
+          <Package size={20} /> Lista de compras
+        </h2>
+        <Link className="boton pequeno" to={`/m/finanzas/importar?destino=proyecto&proyecto=${proyecto.id}`}>
+          <FileSpreadsheet size={14} /> Importar desde Excel
+        </Link>
+      </div>
       <div className="tabla-envoltura">
         <table className="tabla">
           <thead>
@@ -447,6 +452,14 @@ function Compras({ proyecto, compras }: { proyecto: Proyecto; compras: MovProyec
               <tr key={c.id}>
                 <td>
                   {c.descripcion}
+                  {c.nota &&
+                    (/^https?:\/\//.test(c.nota) ? (
+                      <a className="pequeno nota-compra" href={c.nota} target="_blank" rel="noopener noreferrer">
+                        Ver enlace
+                      </a>
+                    ) : (
+                      <span className="suave pequeno nota-compra">{c.nota}</span>
+                    ))}
                   {c.comprobante && (
                     <a className="adjunto" href={c.comprobante.url} title="Ver factura" {...(c.comprobante.url.startsWith('data:') ? { download: 'factura.jpg' } : { target: '_blank', rel: 'noopener noreferrer' })}>
                       <Paperclip size={14} />

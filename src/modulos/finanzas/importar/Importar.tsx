@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, Download, FileSpreadsheet, Upload } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { Boxes, CheckCircle2, Download, FileSpreadsheet, Package, Upload, Wallet } from 'lucide-react';
 import { ejecutarLote, type OperacionLote } from '../../../lib/datos';
 import { nuevoId } from '../../../lib/enlaces';
 import { useSesion, type Perfil } from '../../../lib/sesion';
@@ -20,7 +21,9 @@ import {
   type Pago,
 } from '../datos';
 import { descargarPlantilla, exportarExcel } from '../exportar';
-import { leerArchivo, type Hoja } from './leerArchivo';
+import { ACEPTA_ARCHIVOS, leerArchivo, type Hoja } from './leerArchivo';
+import { sugerirDestino, type Destino } from './articulos';
+import { ImportarArticulos } from './ImportarArticulos';
 import { columnasDeMes, detectarFilaEncabezado, huella, normalizarNombre, sugerirMapeo, texto, type CampoImport } from './normalizar';
 import { ETIQUETA_CAMPO, TIPOS_IMPORT, procesarHoja, type FilaProcesada, type TipoImport } from './procesar';
 
@@ -80,6 +83,10 @@ export function Importar({ d }: { d: Datos }) {
   const [progreso, setProgreso] = useState('');
   const [resultado, setResultado] = useState('');
   const [error, setError] = useState('');
+  const [params] = useSearchParams();
+  const destinoUrl = params.get('destino') as Destino | null;
+  const [destino, setDestino] = useState<Destino | null>(null);
+  const [sugerido, setSugerido] = useState<Destino | null>(null);
 
   const hoja = hojas[hojaIdx];
   const encabezados = hoja?.filas[filaEnc]?.map(texto) || [];
@@ -98,6 +105,9 @@ export function Importar({ d }: { d: Datos }) {
       setHojas(hs);
       prepararHoja(hs[inicio]);
       setHojaIdx(inicio);
+      // Siempre se pregunta a dónde va (salvo que se haya entrado desde un proyecto o el inventario).
+      setSugerido(sugerirDestino(hs[inicio]));
+      setDestino(destinoUrl && ['finanzas', 'proyecto', 'inventario'].includes(destinoUrl) ? destinoUrl : null);
     } catch (err) {
       setError((err as Error).message || 'No se pudo leer el archivo.');
     }
@@ -243,14 +253,14 @@ export function Importar({ d }: { d: Datos }) {
           <FileSpreadsheet size={22} /> Importar desde Excel
         </h2>
         <p className="suave">
-          Sube los Excel que ya manejan (aportes, cuotas, gastos o la tabla por meses). Jeivi reconoce las columnas, te muestra una
-          vista previa y no duplica lo que ya se importó. Si actualizas el Excel y lo vuelves a subir, reemplaza la carga anterior de
-          ese mismo archivo.
+          Sube los Excel que ya manejan (.xlsx, .xls o .csv): aportes, cuotas y gastos, la cotización de un proyecto o la lista de bienes
+          del inventario. Primero te pregunta a dónde va, reconoce las columnas, te muestra una vista previa y no duplica lo que ya se
+          importó. Si actualizas el Excel y lo vuelves a subir, reemplaza la carga anterior de ese mismo archivo.
         </p>
         <div className="acciones">
           <label className="boton primario subir-archivo">
             <Upload size={16} /> {archivo ? 'Subir otro archivo' : 'Elegir archivo (.xlsx o .csv)'}
-            <input type="file" accept=".xlsx,.csv,.txt" hidden onChange={elegirArchivo} />
+            <input type="file" accept={ACEPTA_ARCHIVOS} hidden onChange={elegirArchivo} />
           </label>
           <button className="boton" onClick={() => descargarPlantilla()}>
             <Download size={16} /> Descargar plantilla
@@ -267,11 +277,32 @@ export function Importar({ d }: { d: Datos }) {
         )}
       </section>
 
-      {hoja && (
+      {hoja && archivo && (
         <section className="tarjeta formulario">
-          <h3>1. ¿Qué contiene el archivo?</h3>
-          <div className="fila">
-            {hojas.length > 1 && (
+          <h3>¿A dónde va este Excel?</h3>
+          <p className="suave pequeno">
+            Archivo: <strong>{archivo.name}</strong>
+            {hojas.length > 1 ? ` · ${hojas.length} hojas` : ''}
+          </p>
+          <div className="destinos">
+            {(
+              [
+                ['finanzas', Wallet, 'Finanzas', 'Aportes y cuotas de los diáconos, gastos de la iglesia o la tabla por meses.'],
+                ['proyecto', Package, 'Un proyecto', 'Cotización o lista de compras (ej. la PC para los directos). No cuenta como gasto.'],
+                ['inventario', Boxes, 'Inventario', 'Bienes que la iglesia ya tiene: equipos, sonido, mobiliario…'],
+              ] as const
+            ).map(([k, Icono, titulo, ayuda]) => (
+              <button key={k} type="button" className={`destino${destino === k ? ' activo' : ''}`} onClick={() => setDestino(k)}>
+                <strong>
+                  <Icono size={18} /> {titulo}
+                </strong>
+                <span className="suave">{ayuda}</span>
+                {sugerido === k && destino !== k && <span className="chip mini">Parece esto</span>}
+              </button>
+            ))}
+          </div>
+          {hojas.length > 1 && (
+            <div className="fila">
               <label>
                 Hoja
                 <select
@@ -289,7 +320,19 @@ export function Importar({ d }: { d: Datos }) {
                   ))}
                 </select>
               </label>
-            )}
+            </div>
+          )}
+        </section>
+      )}
+
+      {hoja && archivo && (destino === 'proyecto' || destino === 'inventario') && (
+        <ImportarArticulos key={`${destino}-${archivo.name}-${hojaIdx}`} destino={destino} archivo={archivo} hoja={hoja} proyectoInicial={params.get('proyecto') || undefined} />
+      )}
+
+      {hoja && destino === 'finanzas' && (
+        <section className="tarjeta formulario">
+          <h3>1. ¿Qué contiene el archivo?</h3>
+          <div className="fila">
             <label>
               Tipo de datos
               <select

@@ -114,9 +114,11 @@ export function parsearMonto(c: Celda): number | null {
   let s = texto(c);
   if (!s) return null;
   const negativo = /^\(.*\)$/.test(s) || /^-|\s-/.test(s);
-  // Quitar símbolos de moneda (incluido "B/." del balboa) y lo que no sea número.
+  // Quitar símbolos de moneda (incluido "B/." del balboa).
+  s = s.replace(/b\/\.?|us\$|usd|pab|d[oó]lares|balboas|\$/gi, '');
+  // Si queda texto ("~150-250 según peso") o un rango ("150-250"), no es un monto.
+  if (/[a-zñáéíóú]/i.test(s) || /\d\s*[-–]\s*\d/.test(s)) return null;
   s = s
-    .replace(/b\/\.?|us\$|usd|pab|\$/gi, '')
     .replace(/[^\d.,]/g, '')
     .replace(/^[.,]+|[.,]+$/g, '');
   if (!s) return null;
@@ -151,12 +153,12 @@ export const SINONIMOS: Record<CampoImport, string[]> = {
   nota: ['nota', 'notas', 'observacion', 'observaciones', 'descripcion', 'detalle', 'comentario', 'referencia'],
 };
 
-/** Puntaje de qué tanto se parece un encabezado a un campo. */
-function puntaje(encabezado: string, campo: CampoImport) {
+/** Puntaje de qué tanto se parece un encabezado a una lista de sinónimos. */
+function puntajeCon(encabezado: string, sinonimos: string[]) {
   const e = normalizarNombre(encabezado);
   if (!e) return 0;
   let mejor = 0;
-  for (const s of SINONIMOS[campo]) {
+  for (const s of sinonimos) {
     const n = normalizarNombre(s) || s;
     if (e === n) mejor = Math.max(mejor, 3);
     else if (e.startsWith(n + ' ') || e.endsWith(' ' + n)) mejor = Math.max(mejor, 2);
@@ -167,13 +169,18 @@ function puntaje(encabezado: string, campo: CampoImport) {
 
 /** Propone qué columna corresponde a cada campo (cada columna se usa una sola vez). */
 export function sugerirMapeo(encabezados: string[], campos: CampoImport[]): Partial<Record<CampoImport, number>> {
-  const candidatos: { campo: CampoImport; col: number; p: number }[] = [];
+  return sugerirMapeoCon(encabezados, SINONIMOS, campos);
+}
+
+/** Igual que sugerirMapeo, con cualquier juego de campos y sinónimos (proyectos, inventario…). */
+export function sugerirMapeoCon<K extends string>(encabezados: string[], sinonimos: Record<K, string[]>, campos: K[]): Partial<Record<K, number>> {
+  const candidatos: { campo: K; col: number; p: number }[] = [];
   encabezados.forEach((h, col) => campos.forEach((campo) => {
-    const p = puntaje(h, campo);
+    const p = puntajeCon(h, sinonimos[campo]);
     if (p > 0) candidatos.push({ campo, col, p });
   }));
-  candidatos.sort((a, b) => b.p - a.p);
-  const out: Partial<Record<CampoImport, number>> = {};
+  candidatos.sort((a, b) => b.p - a.p || a.col - b.col);
+  const out: Partial<Record<K, number>> = {};
   const usadas = new Set<number>();
   for (const c of candidatos) {
     if (out[c.campo] !== undefined || usadas.has(c.col)) continue;
@@ -184,12 +191,13 @@ export function sugerirMapeo(encabezados: string[], campos: CampoImport[]): Part
 }
 
 /** Fila de encabezados: la primera (de las 15 primeras) que más se parece a nombres de columna. */
-export function detectarFilaEncabezado(filas: Celda[][]): number {
+export function detectarFilaEncabezado(filas: Celda[][], sinonimos: Record<string, string[]> = SINONIMOS): number {
   let mejor = 0;
   let mejorP = -1;
+  const listas = Object.values(sinonimos);
   filas.slice(0, 15).forEach((f, i) => {
     const textos = f.map(texto).filter((t) => t && isNaN(Number(t)));
-    const p = textos.reduce((s, t) => s + Math.max(...(Object.keys(SINONIMOS) as CampoImport[]).map((c) => puntaje(t, c)), numeroMes(t) ? 1 : 0), 0);
+    const p = textos.reduce((s, t) => s + Math.max(...listas.map((l) => puntajeCon(t, l)), sinonimos === SINONIMOS && numeroMes(t) ? 1 : 0), 0);
     if (p > mejorP) {
       mejorP = p;
       mejor = i;

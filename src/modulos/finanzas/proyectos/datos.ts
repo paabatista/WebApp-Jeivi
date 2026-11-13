@@ -1,5 +1,5 @@
 import { IGLESIA_ID } from '../../../lib/firebase';
-import { redondear, type Comprobante, type Pago } from '../datos';
+import { redondear, type Comprobante, type Importacion, type Pago } from '../datos';
 
 /**
  * Proyectos e inversiones (no son gastos corrientes): ej. "PC para los directos", "Remodelación del baño".
@@ -56,6 +56,10 @@ export interface MovProyecto {
   comprobante?: Comprobante;
   /** Si la compra se registró en el inventario. */
   bienId?: string;
+  /** Detalle o link (ej. de dónde comprarlo). */
+  nota?: string;
+  /** Si vino de un Excel (para reemplazar esa carga sin duplicar). */
+  importacion?: Importacion;
   creado: string;
   registradoPor: string;
 }
@@ -94,6 +98,7 @@ export interface Bien {
   proyectoId?: string;
   proyectoNombre?: string;
   notas?: string;
+  importacion?: Importacion;
   creado: string;
   registradoPor: string;
 }
