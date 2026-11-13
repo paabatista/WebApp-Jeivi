@@ -2020,3 +2020,24 @@ tr.omitida td {
 .ticket-persona {
   flex: 1;
 }
+
+/* ---------- Pagos reportados por diáconos ---------- */
+.campo-comprobante {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem;
+  border: 2px dashed var(--error);
+  border-radius: 12px;
+}
+.campo-comprobante.con-archivo {
+  border-color: var(--exito);
+}
+.chip-error {
+  background: #fdecec;
+  color: var(--error);
+}
+.revisar-reportes {
+  box-shadow: 0 0 0 2px var(--acento), var(--sombra);
+}

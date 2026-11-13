@@ -12,6 +12,7 @@ import { formatoCorto, hoyISO } from '../../lib/fechas';
 import { useSesion, type Perfil } from '../../lib/sesion';
 import { numeroWhatsApp } from '../lectura/suscriptores';
 import { MiEstadoCuenta } from './EstadoCuenta';
+import { RevisarReportes, useReportes } from './Reportes';
 import {
   CONCEPTOS_SUGERIDOS,
   METODOS,
@@ -47,11 +48,13 @@ const modulo = moduloPorId('finanzas')!;
 export function FinanzasModulo() {
   const { perfil, puede } = useSesion();
   const pestanas: Pestana[] = [{ a: '/m/finanzas', texto: 'Mi cuenta', fin: true }];
+  const reportes = useReportes(puede('pastor') ? undefined : null);
+  const porRevisar = (reportes || []).filter((r) => r.estado === 'pendiente').length;
   if (puede('pastor')) {
     pestanas.push(
       { a: '/m/finanzas/resumen', texto: 'Resumen' },
       { a: '/m/finanzas/cargos', texto: 'Cargos' },
-      { a: '/m/finanzas/pagos', texto: 'Aportes' },
+      { a: '/m/finanzas/pagos', texto: porRevisar ? `Aportes (${porRevisar})` : 'Aportes' },
       { a: '/m/finanzas/gastos', texto: 'Gastos' },
       { a: '/m/finanzas/proyectos', texto: 'Proyectos' },
       { a: '/m/finanzas/inventario', texto: 'Inventario' },
@@ -63,7 +66,7 @@ export function FinanzasModulo() {
   return (
     <Layout modulo={modulo} pestanas={pestanas}>
       <Routes>
-        <Route index element={perfil ? <MiEstadoCuenta uid={perfil.uid} /> : null} />
+        <Route index element={perfil ? <MiEstadoCuenta uid={perfil.uid} propia /> : null} />
         <Route path="*" element={puede('pastor') ? <AdminFinanzas /> : <Navigate to="/m/finanzas" replace />} />
       </Routes>
     </Layout>
@@ -648,6 +651,7 @@ function Pagos({ d }: { d: DatosFin }) {
 
   return (
     <div className="pila">
+      <RevisarReportes />
       <form className="tarjeta formulario" onSubmit={registrar}>
         <h2>Registrar aporte de un diácono</h2>
         <div className="fila">

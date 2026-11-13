@@ -240,6 +240,20 @@ service cloud.firestore {
         allow read: if deMiIglesia(ig) && (miNivel() >= 80 || resource.data.diaconoUid == request.auth.uid);
         allow write: if equipo(ig, 80);
       }
+      // Pagos que reporta el propio diácono: siempre con comprobante, quedan "pendiente"
+      // hasta que un pastor los confirma (ahí se crea el aporte en finPagos) o los rechaza.
+      match /finReportes/{id} {
+        allow read: if deMiIglesia(ig) && (miNivel() >= 80 || resource.data.diaconoUid == request.auth.uid);
+        allow create: if equipo(ig, 50)
+          && request.resource.data.diaconoUid == request.auth.uid
+          && request.resource.data.estado == 'pendiente'
+          && request.resource.data.monto is number && request.resource.data.monto > 0 && request.resource.data.monto < 100000
+          && request.resource.data.fecha is string && request.resource.data.fecha.size() == 10
+          && request.resource.data.comprobante.url is string && request.resource.data.comprobante.url.size() > 10
+          && !('pagoId' in request.resource.data) && !('revisadoPor' in request.resource.data);
+        allow update: if equipo(ig, 80);
+        allow delete: if equipo(ig, 80) || (deMiIglesia(ig) && resource.data.diaconoUid == request.auth.uid && resource.data.estado == 'pendiente');
+      }
       match /finGastos/{id} {
         allow read, write: if equipo(ig, 80);
       }

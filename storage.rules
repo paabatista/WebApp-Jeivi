@@ -39,10 +39,10 @@ service firebase.storage {
       allow list: if equipo(ig);
     }
 
-    // Comprobantes de finanzas (fotos o PDF): los suben pastores; los ve el equipo.
+    // Comprobantes de finanzas (fotos o PDF): los suben pastores y los diáconos al reportar su pago; los ve el equipo.
     match /iglesias/{ig}/finanzas/{mes}/{archivo} {
       allow read: if equipo(ig);
-      allow create: if pastor(ig) && (imagen(10) || pdf(10));
+      allow create: if equipo(ig) && (imagen(10) || pdf(10));
     }
 
     // Banners, fotos de cumpleaños, imágenes de anuncios/eventos, logo, banco de imágenes.

@@ -68,6 +68,8 @@ export interface Pago {
   importacion?: Importacion;
   /** Nombre con el que venía en el Excel antes de vincularlo a una cuenta. */
   nombreExcel?: string;
+  /** Si lo reportó el propio diácono (con comprobante) y un pastor lo confirmó. */
+  reporteId?: string;
 }
 
 export interface Gasto {

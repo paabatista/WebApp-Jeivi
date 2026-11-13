@@ -4,6 +4,7 @@ import { CheckCircle2, AlertCircle } from 'lucide-react';
 import { escucharColeccion } from '../../lib/datos';
 import { useSesion } from '../../lib/sesion';
 import { formatoCorto } from '../../lib/fechas';
+import { ReportarPago } from './Reportes';
 import { RUTA_CARGOS, RUTA_PAGOS, calcularEstado, dinero, resumenDeuda, textoPeriodo, type Cargo, type Pago } from './datos';
 
 /** Cargos y pagos de un usuario (las reglas solo dejan ver los propios, salvo a los pastores). */
@@ -40,7 +41,7 @@ export function EstadoCuentaResumen() {
 }
 
 /** Página "Mi estado de cuenta". */
-export function MiEstadoCuenta({ uid, nombre }: { uid: string; nombre?: string }) {
+export function MiEstadoCuenta({ uid, nombre, propia = false }: { uid: string; nombre?: string; propia?: boolean }) {
   const { cargos, pagos, estado, cargando } = useCuenta(uid);
   if (cargando || !estado) return <p className="suave">Cargando…</p>;
 
@@ -59,6 +60,8 @@ export function MiEstadoCuenta({ uid, nombre }: { uid: string; nombre?: string }
           <p className="suave">{estado.alDia ? 'No tienes aportes pendientes.' : resumenDeuda(estado)}</p>
         </div>
       </section>
+
+      {propia && <ReportarPago estado={estado} />}
 
       <section className="tarjeta">
         <h2>Por concepto</h2>

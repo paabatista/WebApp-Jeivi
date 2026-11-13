@@ -39,6 +39,7 @@ const MODULO_POR_COLECCION: Record<string, string> = {
   finCargos: 'finanzas',
   finPagos: 'finanzas',
   finGastos: 'finanzas',
+  finReportes: 'finanzas',
   finProyectos: 'finanzas',
   finProyectoMovs: 'finanzas',
   bienes: 'finanzas',
