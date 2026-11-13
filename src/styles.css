@@ -20,6 +20,7 @@
 html,
 body {
   margin: 0;
+  padding-bottom: env(safe-area-inset-bottom);
   background: var(--fondo);
   color: var(--texto);
   font-family: Montserrat, 'Segoe UI', system-ui, sans-serif;
@@ -116,8 +117,9 @@ label {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  height: 56px;
-  padding: 0 1rem;
+  /* En iPhone instalada, la app se dibuja bajo la barra de la hora: se deja ese espacio. */
+  height: calc(56px + env(safe-area-inset-top));
+  padding: env(safe-area-inset-top) calc(1rem + env(safe-area-inset-right)) 0 calc(1rem + env(safe-area-inset-left));
   background: var(--primario);
   color: #fff;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
@@ -2040,4 +2042,75 @@ tr.omitida td {
 }
 .revisar-reportes {
   box-shadow: 0 0 0 2px var(--acento), var(--sombra);
+}
+
+/* ---------- Celular ---------- */
+.login,
+.publico {
+  padding-top: env(safe-area-inset-top);
+}
+.instalar {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  border-left: 5px solid var(--acento);
+}
+.instalar img {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+.instalar-texto {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.instalar-pasos {
+  margin: 0.5rem 0 0;
+  padding-left: 1.2rem;
+  font-size: 0.9rem;
+}
+.instalar-pasos li {
+  margin: 0.2rem 0;
+}
+.instalar-pasos svg {
+  vertical-align: -2px;
+}
+
+/* Pantallas táctiles: letra de 16px en los campos (si es menor, el iPhone hace zoom al tocarlos)
+   y botones de al menos ~40px para el dedo. */
+@media (pointer: coarse), (max-width: 640px) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):not([type='file']),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+  .boton,
+  .boton.pequeno {
+    min-height: 40px;
+  }
+  .icono-boton {
+    min-width: 40px;
+    min-height: 40px;
+  }
+  .check {
+    width: 34px;
+    height: 34px;
+  }
+  .muestra {
+    width: 32px;
+    height: 32px;
+  }
+  .chip.mini {
+    padding: 0.35rem 0.8rem;
+    min-height: 34px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .color-opciones input[type='color'] {
+    width: 42px;
+    height: 36px;
+  }
 }

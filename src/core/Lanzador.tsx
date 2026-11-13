@@ -1,3 +1,4 @@
+import { BotonInstalar } from './Instalar';
 import { Link } from 'react-router-dom';
 import { useSesion } from '../lib/sesion';
 import { tieneNivel } from '../lib/roles';
@@ -23,6 +24,7 @@ export function Lanzador() {
           </h1>
           <p>{iglesia.nombre}</p>
         </div>
+        <BotonInstalar />
         {perfil?.rol === 'pendiente' && (
           <div className="aviso">
             Tu cuenta no tiene acceso a los módulos. Pide a un pastor que te asigne un nivel.

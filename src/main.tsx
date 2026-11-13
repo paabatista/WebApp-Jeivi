@@ -4,6 +4,9 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import { SesionProvider } from './lib/sesion';
 import './styles.css';
+import { escucharInstalacion } from './core/Instalar';
+
+escucharInstalacion();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
