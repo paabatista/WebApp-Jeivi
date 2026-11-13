@@ -1,7 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   GoogleAuthProvider,
-  OAuthProvider,
   createUserWithEmailAndPassword,
   onAuthStateChanged,
   sendEmailVerification,
@@ -110,7 +109,6 @@ interface Sesion {
   seguirConectado: () => void;
   puede: (minimo: Rol) => boolean;
   entrarGoogle: () => Promise<void>;
-  entrarMicrosoft: () => Promise<void>;
   entrarCorreo: (email: string, clave: string) => Promise<void>;
   registrarCorreo: (nombre: string, email: string, clave: string) => Promise<void>;
   recuperarClave: (email: string) => Promise<void>;
@@ -131,7 +129,7 @@ const PERFIL_DEMO: Perfil = {
   creado: new Date().toISOString(),
 };
 
-/** Las cuentas con correo y contraseña deben confirmar su correo; Google y Microsoft ya vienen verificados. */
+/** Las cuentas con correo y contraseña deben confirmar su correo; Google ya viene verificado. */
 const necesitaVerificar = (u: User) => !u.emailVerified && u.providerData.some((p) => p.providerId === 'password');
 
 export function SesionProvider({ children }: { children: ReactNode }) {
@@ -311,13 +309,6 @@ export function SesionProvider({ children }: { children: ReactNode }) {
         marcarActividad();
         await signInWithPopup(auth, new GoogleAuthProvider());
       },
-      entrarMicrosoft: async () => {
-        setAviso('');
-        marcarActividad();
-        const p = new OAuthProvider('microsoft.com');
-        p.setCustomParameters({ prompt: 'select_account' });
-        await signInWithPopup(auth, p);
-      },
       entrarCorreo: async (email, clave) => {
         setAviso('');
         marcarActividad();
@@ -378,7 +369,7 @@ export function mensajeErrorAuth(e: unknown): string {
     'auth/popup-closed-by-user': 'Se cerró la ventana antes de terminar.',
     'auth/popup-blocked': 'El navegador bloqueó la ventana. Permite ventanas emergentes e intenta de nuevo.',
     'auth/account-exists-with-different-credential':
-      'Ese correo ya está registrado con otro método (Google, Microsoft o contraseña). Usa el mismo con el que te registraste.',
+      'Ese correo ya está registrado con otro método (Google o contraseña). Usa el mismo con el que te registraste.',
     'auth/operation-not-allowed': 'Este método de acceso no está activado en Firebase.',
     'auth/unauthorized-domain': 'Este dominio no está autorizado en Firebase Authentication.',
     'auth/too-many-requests': 'Demasiados intentos. Espera unos minutos e intenta de nuevo.',

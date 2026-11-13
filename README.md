@@ -59,8 +59,7 @@ Crea un repositorio vacío (privado recomendado) y sube esta carpeta. El archivo
 
 ### 2. Firebase
 1. Crea un proyecto en https://console.firebase.google.com (plan gratis Spark es suficiente).
-2. **Authentication → Método de acceso:** activa *Google*, *Correo electrónico/contraseña* y *Microsoft*.
-   - Microsoft pide un *Application ID* y *secret* de Azure: https://portal.azure.com → App registrations → New registration → tipo de cuenta "cualquier directorio y cuentas personales de Microsoft" → en *Redirect URI* pega la URL que muestra Firebase (`https://TU-PROYECTO.firebaseapp.com/__/auth/handler`) → copia el *Application (client) ID* y crea un *client secret*.
+2. **Authentication → Método de acceso:** activa *Google* y *Correo electrónico/contraseña*.
 3. **Authentication → Configuración → Dominios autorizados:** agrega tu dominio de Vercel (ej. `jeivi.vercel.app`) y el dominio propio si lo usas.
 4. **Firestore Database:** créala en modo producción.
 5. Publica las reglas e índices (con Firebase CLI) o copia `firestore.rules` en la consola:

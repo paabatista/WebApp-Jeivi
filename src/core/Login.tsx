@@ -5,7 +5,7 @@ import { firebaseConfigurado } from '../lib/firebase';
 type Modo = 'entrar' | 'registro' | 'recuperar';
 
 export function Login() {
-  const { iglesia, aviso, entrarGoogle, entrarMicrosoft, entrarCorreo, registrarCorreo, recuperarClave } = useSesion();
+  const { iglesia, aviso, entrarGoogle, entrarCorreo, registrarCorreo, recuperarClave } = useSesion();
   const [modo, setModo] = useState<Modo>('entrar');
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
@@ -65,15 +65,6 @@ export function Login() {
                 <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z" />
               </svg>
               Continuar con Google
-            </button>
-            <button className="boton-proveedor" disabled={ocupado} onClick={() => ejecutar(entrarMicrosoft)}>
-              <svg width="18" height="18" viewBox="0 0 21 21" aria-hidden>
-                <rect x="1" y="1" width="9" height="9" fill="#f25022" />
-                <rect x="11" y="1" width="9" height="9" fill="#7fba00" />
-                <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
-                <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
-              </svg>
-              Continuar con Microsoft (Outlook / Hotmail)
             </button>
             <div className="separador">o con tu correo</div>
           </>

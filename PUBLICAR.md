@@ -7,7 +7,6 @@ Tiempo aproximado: 30–45 minutos. Todo es gratis salvo que superes los límite
 2. **Compilación → Authentication → Comenzar → Método de acceso**: activa
    - **Google**
    - **Correo electrónico/contraseña**
-   - **Microsoft** (opcional; pide registrar una app en Azure — ver README).
 3. **Compilación → Firestore Database → Crear base de datos** → modo **producción** → región `nam5` o `us-east1`.
 4. **Firestore → Reglas**: borra todo, pega el contenido de `firestore.rules` y **Publicar**.
 5. **Firestore → Índices → Compuestos → Crear índice**: colección `users`, campos `iglesiaId` (Ascendente) y `suscritoCorreo` (Ascendente).
