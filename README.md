@@ -11,7 +11,7 @@ Hecha para **Ministerio Jesucristo Imperio de Vida**, preparada para que más ad
 |---|---|---|
 | Lectura Bíblica | ✅ | Plan de 6 meses, banner para WhatsApp, link público para ver la lectura y suscribirse, correo diario |
 | Cumpleaños | ✅ | Próximos, calendario, registros, banner con foto, link público de registro (persona + hijos + foto), exportar |
-| Finanzas | ✅ | Aportes de los diáconos (luz, alquiler, mantenimiento…), gastos con campos libres, estado de cuenta, **importar los Excel que ya usan** (.xlsx/.csv; primero pregunta si van a Finanzas, a un Proyecto o al Inventario, sin duplicar) y descargar |
+| Finanzas | ✅ | Aportes de los diáconos (luz, alquiler, mantenimiento…), gastos con campos libres, estado de cuenta, **importar los Excel que ya usan** (.xlsx, .xls, .ods o .csv; primero pregunta si van a Finanzas, a un Proyecto o al Inventario, sin duplicar) y descargar |
 | Eventos | ✅ | Próximos, calendario mensual, responsables, tareas, banner, link de inscripción con cupo y lista de inscritos |
 | Anuncios | ✅ | Tablero informativo, anuncios con imagen y vigencia, banner, link público del tablero, suscripción a avisos y envío por correo |
 | Solicitudes | ✅ | Oración, visitas, consejería… por link público; bandeja con estados, responsable, notas de seguimiento; confidenciales solo para pastores |

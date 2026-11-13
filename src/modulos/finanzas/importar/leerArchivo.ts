@@ -54,7 +54,25 @@ function separarCSV(textoCSV: string): Celda[][] {
 }
 
 /** Tipos de archivo que acepta el botón de subir. */
-export const ACEPTA_ARCHIVOS = '.xlsx,.xlsm,.xls,.csv,.txt';
+export const ACEPTA_ARCHIVOS = '.xlsx,.xlsm,.xls,.ods,.csv,.txt';
+
+/** Excel antiguo (.xls) u OpenDocument (.ods): se leen con SheetJS (solo se descarga cuando hace falta). */
+async function leerConSheetJS(archivo: File): Promise<Hoja[]> {
+  const XLSX = await import('xlsx');
+  let libro;
+  try {
+    libro = XLSX.read(await archivo.arrayBuffer(), { type: 'array', cellDates: true });
+  } catch {
+    throw new Error('No se pudo leer el archivo. Si tiene contraseña, quítasela en Excel y vuelve a subirlo.');
+  }
+  const hojas: Hoja[] = [];
+  for (const nombre of libro.SheetNames) {
+    const filas = XLSX.utils.sheet_to_json<Celda[]>(libro.Sheets[nombre], { header: 1, raw: true, defval: null, blankrows: true, UTC: true });
+    if (filas.some((f) => f.some((c) => c !== null && c !== ''))) hojas.push({ nombre, filas });
+  }
+  if (!hojas.length) throw new Error('El archivo no tiene datos.');
+  return hojas;
+}
 
 /** Lee un .xlsx/.xlsm o .csv y devuelve sus hojas como tablas. */
 export async function leerArchivo(archivo: File): Promise<Hoja[]> {
@@ -63,9 +81,7 @@ export async function leerArchivo(archivo: File): Promise<Hoja[]> {
     const t = (await archivo.text()).replace(/^﻿/, '');
     return [{ nombre: archivo.name.replace(/\.\w+$/, ''), filas: separarCSV(t) }];
   }
-  if (nombre.endsWith('.xls')) {
-    throw new Error('Ese archivo es del Excel antiguo (.xls). Ábrelo en Excel y usa "Guardar como → Libro de Excel (.xlsx)".');
-  }
+  if (nombre.endsWith('.xls') || nombre.endsWith('.ods')) return leerConSheetJS(archivo);
   const { default: ExcelJS } = await import('exceljs');
   const libro = new ExcelJS.Workbook();
   await libro.xlsx.load(await archivo.arrayBuffer());
