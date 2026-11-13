@@ -1,4 +1,5 @@
 import { initializeApp } from 'firebase/app';
+import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
@@ -14,6 +15,21 @@ const config = {
 export const firebaseConfigurado = Boolean(config.apiKey && config.projectId);
 
 export const app = initializeApp(firebaseConfigurado ? config : { apiKey: 'demo', projectId: 'demo-jeivi', authDomain: 'demo-jeivi.firebaseapp.com' });
+
+/**
+ * App Check (reCAPTCHA v3 invisible): bloquea bots y abuso del backend.
+ * Se activa solo si existe VITE_RECAPTCHA_SITE_KEY. En la consola de Firebase empieza en
+ * "Supervisión" y se pasa a "Aplicar" cuando las métricas muestren que todo el tráfico es válido.
+ */
+const claveRecaptcha = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+if (firebaseConfigurado && claveRecaptcha) {
+  try {
+    initializeAppCheck(app, { provider: new ReCaptchaV3Provider(claveRecaptcha), isTokenAutoRefreshEnabled: true });
+  } catch (e) {
+    console.warn('App Check no se pudo iniciar', e);
+  }
+}
+
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 

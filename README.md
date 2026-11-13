@@ -11,7 +11,7 @@ Hecha para **Ministerio Jesucristo Imperio de Vida**, preparada para que más ad
 |---|---|---|
 | Lectura Bíblica | ✅ | Plan de 6 meses, banner para WhatsApp, link público para ver la lectura y suscribirse, correo diario |
 | Cumpleaños | ✅ | Próximos, calendario, registros, banner con foto, link público de registro (persona + hijos + foto), exportar |
-| Finanzas | ✅ | Aportes de los diáconos (luz, alquiler, mantenimiento…), gastos con campos libres, estado de cuenta, Excel |
+| Finanzas | ✅ | Aportes de los diáconos (luz, alquiler, mantenimiento…), gastos con campos libres, estado de cuenta, **importar los Excel que ya usan** (sin duplicar) y descargar |
 | Eventos | ✅ | Próximos, calendario mensual, responsables, tareas, banner, link de inscripción con cupo y lista de inscritos |
 | Anuncios | ✅ | Tablero informativo, anuncios con imagen y vigencia, banner, link público del tablero, suscripción a avisos y envío por correo |
 | Solicitudes | ✅ | Oración, visitas, consejería… por link público; bandeja con estados, responsable, notas de seguimiento; confidenciales solo para pastores |
@@ -19,14 +19,14 @@ Hecha para **Ministerio Jesucristo Imperio de Vida**, preparada para que más ad
 
 ### Quién usa Jeivi
 
-Solo el **equipo** tiene usuario:
+Solo el **equipo** tiene usuario, y **solo por invitación** (Usuarios → Invitar al equipo). Ver [SEGURIDAD.md](SEGURIDAD.md).
 
 | Nivel | Puede |
 |---|---|
 | **Super admin** | Todo, incluida la configuración de la app |
 | **Pastor (admin)** | Usuarios, finanzas completas, ciclos de lectura, imágenes. No toca la configuración de la app |
 | **Diácono** | Entra a los módulos, edita lo básico, crea banners y **links de registro**, ve **su estado de cuenta** |
-| **Pendiente** | Cuenta nueva: no ve nada hasta que un pastor la aprueba como diácono |
+| **Sin acceso** (`pendiente`) | Bloqueado: no ve nada |
 
 La **congregación no tiene usuario**. Un diácono genera un **link** desde el módulo (Lectura, Cumpleaños, Anuncios, Solicitudes, o dentro de cada Evento) y lo comparte por WhatsApp. Quien lo abre solo ve ese formulario: no puede ver ni modificar ningún dato. Los links se pueden desactivar en cualquier momento.
 
@@ -35,8 +35,8 @@ La **congregación no tiene usuario**. Un diácono genera un **link** desde el m
 1. **Conceptos:** Luz, Agua, Alquiler, Mantenimiento… cada uno con *campos libres* para sus gastos (n.º de factura, kWh, vencimiento…).
 2. **Cargos:** lo que le toca a cada diácono. Dos formas: *repartir un recibo* (ej. luz $100 entre 4 = $25 c/u, y opcionalmente se registra como gasto) o *monto fijo* por diácono.
 3. **Aportes:** el pastor registra lo que cada diácono entregó (efectivo, Yappy, transferencia).
-4. **Estado de cuenta:** cada diácono, al entrar a Jeivi, ve **“¡Estás al día!”** o **“Debes $25.00 — Luz (nov 2026)”**. Los pagos se aplican a los meses más antiguos.
-5. **Resumen:** gastos, aportes y pendiente por mes; estado de cada diácono con botón de recordatorio por WhatsApp; **Descargar Excel**.
+6. **Estado de cuenta:** cada diácono, al entrar a Jeivi, ve **“¡Estás al día!”** o **“Debes $25.00 — Luz (nov 2026)”**. Los pagos se aplican a los meses más antiguos.
+7. **Resumen:** gastos, aportes y pendiente por mes; estado de cada diácono con botón de recordatorio por WhatsApp; **Descargar Excel**.
 
 ## Probar en tu computadora
 
@@ -76,9 +76,8 @@ Crea un repositorio vacío (privado recomendado) y sube esta carpeta. El archivo
 4. Cada `git push` a `main` publica automáticamente.
 
 ### 4. Tu usuario super admin
-1. Entra a la app publicada e inicia sesión (Google, Microsoft o correo). Tu cuenta queda *pendiente*.
-2. En Firebase → Firestore → colección `users` → tu documento → cambia el campo `rol` a `superadmin`.
-3. Recarga la app: ya verás todos los módulos. Pide a pastores y diáconos que creen su cuenta y apruébalos en *Usuarios*.
+1. Tu documento en Firestore → `users` → campo `rol` = `superadmin` (se hace una sola vez, a mano).
+2. A pastores y diáconos los **invitas** en *Usuarios → Invitar al equipo* (correo + nivel) y les envías el mensaje por WhatsApp. Al entrar con ese correo, su cuenta se crea con ese nivel.
 
 ### 5. Correo diario (opcional pero recomendado)
 El cron `/api/cron/lectura-diaria` corre de lunes a viernes a las 5:00 a.m. (hora de Panamá) y envía la lectura a quienes se suscribieron con su correo por el link público, y a los diáconos que la activaron en *Mi perfil*. Quienes dejaron solo su WhatsApp aparecen en *Lectura → Link y suscriptores* con un botón para enviarles la lectura del día.

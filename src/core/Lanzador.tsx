@@ -25,7 +25,7 @@ export function Lanzador() {
         </div>
         {perfil?.rol === 'pendiente' && (
           <div className="aviso">
-            Tu cuenta está pendiente de aprobación. Un pastor debe aprobarte como diácono para que veas los módulos.
+            Tu cuenta no tiene acceso a los módulos. Pide a un pastor que te asigne un nivel.
           </div>
         )}
         {perfil && perfil.rol !== 'pendiente' && iglesia.modulosActivos.includes('finanzas') && <EstadoCuentaResumen />}

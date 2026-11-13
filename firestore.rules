@@ -1,7 +1,8 @@
 rules_version = '2';
 
-// Reglas de seguridad de Jeivi.
-// Usuarios (solo el equipo): superadmin(100) > pastor(80) > diacono(50) > pendiente(10).
+// Reglas de seguridad de Jeivi. Todo lo que no está permitido aquí queda DENEGADO.
+// Usuarios (solo el equipo, por invitación): superadmin(100) > pastor(80) > diacono(50) > pendiente/sin acceso(10).
+// Cada usuario solo ve los datos de SU iglesia (iglesiaId).
 // La congregación NO tiene usuario: solo puede CREAR registros a través de un link activo
 // (suscribirse, registrar cumpleaños, inscribirse a un evento, enviar una solicitud).
 // Solo puede leer lo que es público a propósito: lectura del día, anuncios y eventos marcados como públicos.
@@ -24,6 +25,8 @@ service cloud.firestore {
       return token is string && exists(ruta) && get(ruta).data.activo == true && get(ruta).data.modulo == modulo;
     }
     function texto(v, min, max) { return v is string && v.size() >= min && v.size() <= max; }
+    function miCorreo() { return request.auth.token.email.lower(); }
+    function rutaInvitacion(correo) { return /databases/$(database)/documents/invitaciones/$(correo); }
 
     // ---------- Usuarios ----------
     match /users/{uid} {
@@ -32,13 +35,18 @@ service cloud.firestore {
         (miNivel() >= 80 && resource.data.iglesiaId == yo().iglesiaId)
       );
 
-      // Toda cuenta nueva nace 'pendiente'; un pastor la aprueba como diácono.
-      // El primer super admin se asigna a mano desde la consola de Firebase.
+      // Solo por invitación: el perfil se crea con el rol y la iglesia de la invitación,
+      // y únicamente si el correo está verificado (Google lo verifica; con contraseña hay que confirmar el enlace).
+      // El super admin NUNCA se puede crear desde la app: solo desde la consola de Firebase.
       allow create: if autenticado()
         && request.auth.uid == uid
+        && request.auth.token.email_verified == true
         && request.resource.data.uid == uid
-        && request.resource.data.email == request.auth.token.email.lower()
-        && request.resource.data.rol == 'pendiente';
+        && request.resource.data.email == miCorreo()
+        && exists(rutaInvitacion(miCorreo()))
+        && request.resource.data.rol == get(rutaInvitacion(miCorreo())).data.rol
+        && request.resource.data.rol in ['pastor', 'diacono']
+        && request.resource.data.iglesiaId == get(rutaInvitacion(miCorreo())).data.iglesiaId;
 
       allow update: if autenticado() && (
         // El propio usuario: nombre, WhatsApp, suscripción… pero no su rol ni su iglesia.
@@ -54,11 +62,34 @@ service cloud.firestore {
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rol']))
       );
 
-      allow delete: if miNivel() >= 100;
+      // Solo el super admin borra usuarios; nunca a sí mismo ni a otro super admin.
+      allow delete: if miNivel() >= 100
+        && request.auth.uid != uid
+        && resource.data.rol != 'superadmin'
+        && resource.data.iglesiaId == yo().iglesiaId;
 
       match /progresoLectura/{cicloId} {
         allow read, write: if autenticado() && request.auth.uid == uid;
       }
+    }
+
+    // ---------- Invitaciones (id = correo en minúsculas) ----------
+    match /invitaciones/{correo} {
+      // Cada quien puede consultar SU invitación; los pastores ven las de su iglesia.
+      allow get: if autenticado() && (
+        miCorreo() == correo ||
+        (miNivel() >= 80 && resource.data.iglesiaId == yo().iglesiaId)
+      );
+      allow list: if miNivel() >= 80 && resource.data.iglesiaId == yo().iglesiaId;
+      // Super admin invita pastores y diáconos; un pastor solo diáconos. Nadie invita super admins.
+      allow create, update: if miNivel() >= 80
+        && request.resource.data.iglesiaId == yo().iglesiaId
+        && request.resource.data.email == correo
+        && request.resource.data.rol in (miNivel() >= 100 ? ['pastor', 'diacono'] : ['diacono'])
+        && texto(request.resource.data.nombre, 1, 80);
+      allow delete: if miNivel() >= 80
+        && resource.data.iglesiaId == yo().iglesiaId
+        && (miNivel() >= 100 || resource.data.rol == 'diacono');
     }
 
     // ---------- Iglesia ----------

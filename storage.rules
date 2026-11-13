@@ -1,0 +1,12 @@
+rules_version = '2';
+
+// Jeivi no usa Firebase Storage (las imágenes van a Cloudinary o reducidas dentro de Firestore).
+// Si algún día se activa Storage, todo queda cerrado salvo lo que se habilite aquí,
+// siempre aislado por iglesia: /iglesias/{iglesiaId}/...
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{todo=**} {
+      allow read, write: if false;
+    }
+  }
+}

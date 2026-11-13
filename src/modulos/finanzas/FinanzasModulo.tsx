@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
-import { Download, MessageCircle, Plus, Trash2, X } from 'lucide-react';
+import { Link, Navigate, Route, Routes } from 'react-router-dom';
+import { Download, MessageCircle, Plus, Trash2, Upload, X } from 'lucide-react';
 import { Layout, type Pestana } from '../../core/Layout';
 import { Cargando } from '../../core/Cargando';
 import { moduloPorId } from '../../core/modulos';
@@ -19,6 +19,8 @@ import {
   RUTA_GASTOS,
   RUTA_PAGOS,
   calcularEstado,
+  personasConMovimientos,
+  type PersonaFin,
   dinero,
   periodoActual,
   redondear,
@@ -32,6 +34,8 @@ import {
   type Pago,
 } from './datos';
 import { exportarExcel } from './exportar';
+import { ejecutarLote, type OperacionLote } from '../../lib/datos';
+import { Importar } from './importar/Importar';
 
 const modulo = moduloPorId('finanzas')!;
 
@@ -45,6 +49,7 @@ export function FinanzasModulo() {
       { a: '/m/finanzas/pagos', texto: 'Aportes' },
       { a: '/m/finanzas/gastos', texto: 'Gastos' },
       { a: '/m/finanzas/conceptos', texto: 'Conceptos' },
+      { a: '/m/finanzas/importar', texto: 'Importar Excel' },
     );
   }
   return (
@@ -90,6 +95,7 @@ function AdminFinanzas() {
       <Route path="pagos" element={<Pagos d={d} />} />
       <Route path="gastos" element={<Gastos d={d} />} />
       <Route path="conceptos" element={<Conceptos d={d} />} />
+      <Route path="importar" element={<Importar d={d} />} />
       <Route path="*" element={<Navigate to="/m/finanzas" replace />} />
     </Routes>
   );
@@ -126,9 +132,11 @@ function Resumen({ d }: { d: DatosFin }) {
   const [periodo, setPeriodo] = useState(periodoActual());
   const [verUid, setVerUid] = useState<string | null>(null);
 
+  const [vincular, setVincular] = useState<Record<string, string>>({});
+  const [msgVinculo, setMsgVinculo] = useState('');
   const porDiacono = useMemo(
     () =>
-      d.usuarios.map((u) => {
+      personasConMovimientos(d.usuarios, d.cargos, d.pagos).map((u) => {
         const e = calcularEstado(
           d.cargos.filter((c) => c.diaconoUid === u.uid),
           d.pagos.filter((p) => p.diaconoUid === u.uid),
@@ -145,11 +153,25 @@ function Resumen({ d }: { d: DatosFin }) {
   const pendienteTotal = suma(porDiacono, (x) => x.e.saldo);
   const conceptosMes = [...new Set([...gastosMes.map((g) => g.conceptoNombre), ...cargosMes.map((c) => c.conceptoNombre), ...pagosMes.map((p) => p.conceptoNombre)])].sort();
 
-  const recordatorio = (u: Perfil, deuda: string, total: number) =>
+  /** Pasa los cargos y aportes de alguien "sin cuenta" (vino de Excel) a su usuario real. */
+  async function vincularCon(ext: PersonaFin) {
+    const destino = d.usuarios.find((u) => u.uid === vincular[ext.uid]);
+    if (!destino) return;
+    if (!confirm(`¿Pasar todos los cargos y aportes de "${ext.nombre}" a la cuenta de ${destino.nombre}?`)) return;
+    const ops: OperacionLote[] = [
+      ...d.cargos.filter((c) => c.diaconoUid === ext.uid).map((c) => ({ tipo: 'guardar' as const, ruta: `${RUTA_CARGOS}/${c.id}`, data: { ...sinId(c), diaconoUid: destino.uid, diaconoNombre: destino.nombre, nombreExcel: c.nombreExcel || ext.nombre } })),
+      ...d.pagos.filter((p) => p.diaconoUid === ext.uid).map((p) => ({ tipo: 'guardar' as const, ruta: `${RUTA_PAGOS}/${p.id}`, data: { ...sinId(p), diaconoUid: destino.uid, diaconoNombre: destino.nombre, nombreExcel: p.nombreExcel || ext.nombre } })),
+    ];
+    await ejecutarLote(ops);
+    setMsgVinculo(`${ops.length} registros de "${ext.nombre}" ahora son de ${destino.nombre}.`);
+    setTimeout(() => setMsgVinculo(''), 4000);
+  }
+
+  const recordatorio = (u: PersonaFin, deuda: string, total: number) =>
     `Hola ${u.nombre.split(' ')[0]}, Dios te bendiga. Te recordamos que tienes pendiente ${dinero(total)} en aportes: ${deuda}. Puedes ver tu estado de cuenta en Jeivi: ${window.location.origin}/m/finanzas\n\n${iglesia.nombre}`;
 
   if (verUid) {
-    const u = d.usuarios.find((x) => x.uid === verUid);
+    const u = porDiacono.find((x) => x.u.uid === verUid)?.u;
     return (
       <div className="pila">
         <button className="boton" onClick={() => setVerUid(null)}>
@@ -165,9 +187,14 @@ function Resumen({ d }: { d: DatosFin }) {
       {!d.conceptos.length && <SinConceptos />}
       <div className="tarjeta fila-entre">
         <SelectorPeriodo periodo={periodo} setPeriodo={setPeriodo} />
-        <button className="boton" onClick={() => exportarExcel(d, iglesia.nombre)}>
-          <Download size={16} /> Descargar Excel
-        </button>
+        <div className="acciones">
+          <Link className="boton" to="/m/finanzas/importar">
+            <Upload size={16} /> Importar Excel
+          </Link>
+          <button className="boton" onClick={() => exportarExcel(d, iglesia.nombre)}>
+            <Download size={16} /> Descargar Excel
+          </button>
+        </div>
       </div>
       <div className="kpis">
         <div className="tarjeta kpi">
@@ -190,6 +217,7 @@ function Resumen({ d }: { d: DatosFin }) {
 
       <section className="tarjeta">
         <h2>Estado de cada diácono</h2>
+        {msgVinculo && <div className="exito">{msgVinculo}</div>}
         <div className="tabla-envoltura">
           <table className="tabla">
             <thead>
@@ -208,6 +236,24 @@ function Resumen({ d }: { d: DatosFin }) {
                     <button className="enlace" onClick={() => setVerUid(u.uid)}>
                       {u.nombre}
                     </button>
+                    {u.externo && (
+                      <div className="vincular">
+                        <span className="chip mini">sin cuenta</span>
+                        <select value={vincular[u.uid] || ''} onChange={(ev) => setVincular((v) => ({ ...v, [u.uid]: ev.target.value }))}>
+                          <option value="">Vincular con…</option>
+                          {d.usuarios.map((x) => (
+                            <option key={x.uid} value={x.uid}>
+                              {x.nombre}
+                            </option>
+                          ))}
+                        </select>
+                        {vincular[u.uid] && (
+                          <button className="boton pequeno" onClick={() => vincularCon(u)}>
+                            Vincular
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </td>
                   <td>{dinero(e.totalCargos)}</td>
                   <td>{dinero(e.totalPagos)}</td>
@@ -860,4 +906,10 @@ function Conceptos({ d }: { d: DatosFin }) {
       </section>
     </div>
   );
+}
+
+/** Copia de un registro sin su id (el id va en la ruta). */
+function sinId<T extends { id: string }>(x: T): Omit<T, 'id'> {
+  const { id: _id, ...resto } = x;
+  return resto;
 }

@@ -4,3 +4,10 @@ dist
 .env.local
 .vercel
 *.log
+
+# Claves privadas: NUNCA al repositorio (van en Vercel → Environment Variables)
+*firebase-adminsdk*.json
+*serviceAccount*.json
+*-service-account*.json
+*.pem
+*.key

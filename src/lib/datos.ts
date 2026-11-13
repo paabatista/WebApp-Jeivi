@@ -6,10 +6,12 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDoc,
   onSnapshot,
   query,
   setDoc,
   where,
+  writeBatch,
   type DocumentData,
 } from 'firebase/firestore';
 import { db, firebaseConfigurado } from './firebase';
@@ -94,6 +96,13 @@ export function escucharColeccion<T = DocumentData>(
   );
 }
 
+/** Lee un documento una sola vez. */
+export async function leerDoc<T = DocumentData>(ruta: string): Promise<T | null> {
+  if (MODO_DEMO) return (leerDemo()[ruta] as T) ?? null;
+  const s = await getDoc(doc(db, ruta));
+  return s.exists() ? (s.data() as T) : null;
+}
+
 /** Guarda (fusionando por defecto) un documento. */
 export async function guardarDoc(ruta: string, data: DocumentData, fusionarCampos = true): Promise<void> {
   if (MODO_DEMO) {
@@ -113,6 +122,31 @@ export async function borrarDoc(ruta: string): Promise<void> {
     return;
   }
   await deleteDoc(doc(db, ruta));
+}
+
+export type OperacionLote = { tipo: 'guardar'; ruta: string; data: DocumentData } | { tipo: 'borrar'; ruta: string };
+
+/** Escribe muchas operaciones de una vez (en bloques de 400, el límite de Firestore es 500). */
+export async function ejecutarLote(ops: OperacionLote[], alAvanzar?: (hechas: number) => void): Promise<void> {
+  if (MODO_DEMO) {
+    const todo = leerDemo();
+    for (const op of ops) {
+      if (op.tipo === 'guardar') todo[op.ruta] = op.data;
+      else delete todo[op.ruta];
+    }
+    escribirDemo(todo);
+    alAvanzar?.(ops.length);
+    return;
+  }
+  for (let i = 0; i < ops.length; i += 400) {
+    const lote = writeBatch(db);
+    for (const op of ops.slice(i, i + 400)) {
+      if (op.tipo === 'guardar') lote.set(doc(db, op.ruta), limpiar(op.data));
+      else lote.delete(doc(db, op.ruta));
+    }
+    await lote.commit();
+    alAvanzar?.(Math.min(ops.length, i + 400));
+  }
 }
 
 /** Firestore no acepta `undefined`. */

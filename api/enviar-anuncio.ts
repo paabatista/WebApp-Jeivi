@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { adminDb, verificarUsuario } from './_lib/firebaseAdmin.js';
 import { enviarCorreos, type Correo } from './_lib/correo.js';
 import { firmaBaja } from './_lib/baja.js';
+import { origenPermitido } from './_lib/origen.js';
 
 /**
  * POST /api/enviar-anuncio  { anuncioId }
@@ -11,6 +12,7 @@ const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
+  if (!origenPermitido(req)) return res.status(403).json({ error: 'Origen no permitido' });
   try {
     const usuario = await verificarUsuario(req.headers.authorization, 50);
     const ig = usuario.iglesiaId;

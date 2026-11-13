@@ -38,6 +38,9 @@ Tiempo aproximado: 30–45 minutos. Todo es gratis salvo que superes los límite
 3. **Deploy**. Si cambias variables después, usa **Deployments → ⋯ → Redeploy**.
 4. Vuelve a Firebase → **Authentication → Configuración → Dominios autorizados** → agrega el dominio de Vercel (`webapp-jeivi.vercel.app`) y tu dominio propio si lo usas.
 
+## 2.5 Seguridad
+Después de publicar, sigue los pasos manuales de [SEGURIDAD.md](SEGURIDAD.md) (reglas, dominios, App Check).
+
 ## 3. Tu cuenta de super admin
 1. Abre la app publicada y entra con Google (o crea cuenta con correo). Quedarás "pendiente".
 2. Firebase → Firestore → `users` → tu documento → campo `rol` → cambia `pendiente` por `superadmin`.

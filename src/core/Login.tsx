@@ -5,7 +5,7 @@ import { firebaseConfigurado } from '../lib/firebase';
 type Modo = 'entrar' | 'registro' | 'recuperar';
 
 export function Login() {
-  const { iglesia, entrarGoogle, entrarMicrosoft, entrarCorreo, registrarCorreo, recuperarClave } = useSesion();
+  const { iglesia, aviso, entrarGoogle, entrarMicrosoft, entrarCorreo, registrarCorreo, recuperarClave } = useSesion();
   const [modo, setModo] = useState<Modo>('entrar');
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
@@ -47,6 +47,10 @@ export function Login() {
           <p>{iglesia.nombre}</p>
         </div>
 
+        {aviso && <div className="aviso">{aviso}</div>}
+        {modo === 'registro' && (
+          <div className="aviso">Solo pueden crear cuenta los correos que un pastor invitó. Usa ese mismo correo; te llegará un enlace para confirmarlo.</div>
+        )}
         {!firebaseConfigurado && (
           <div className="aviso">Firebase no está configurado. Copia .env.example a .env y completa los datos.</div>
         )}
@@ -94,7 +98,7 @@ export function Login() {
                 value={clave}
                 onChange={(e) => setClave(e.target.value)}
                 required
-                minLength={6}
+                minLength={modo === 'registro' ? 8 : 6}
                 autoComplete={modo === 'registro' ? 'new-password' : 'current-password'}
               />
             </label>
@@ -109,7 +113,7 @@ export function Login() {
         <div className="login-enlaces">
           {modo === 'entrar' ? (
             <>
-              <button onClick={() => setModo('registro')}>Crear una cuenta</button>
+              <button onClick={() => setModo('registro')}>Tengo invitación: crear cuenta</button>
               <button onClick={() => setModo('recuperar')}>Olvidé mi contraseña</button>
             </>
           ) : (

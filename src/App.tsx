@@ -4,6 +4,7 @@ import { useSesion } from './lib/sesion';
 import { tieneNivel } from './lib/roles';
 import { Cargando } from './core/Cargando';
 import { Login } from './core/Login';
+import { PantallaSinInvitacion, PantallaVerificar } from './core/PantallasAcceso';
 import { Lanzador } from './core/Lanzador';
 import { Perfil } from './core/Perfil';
 import { moduloPorId } from './core/modulos';
@@ -40,8 +41,11 @@ function RutaModulo() {
 }
 
 function AppPrivada() {
-  const { cargando, perfil } = useSesion();
+  const { cargando, perfil, usuario, estadoAcceso } = useSesion();
   if (cargando) return <Cargando texto="Abriendo Jeivi…" />;
+  if (usuario && !perfil && estadoAcceso === 'verificar') return <PantallaVerificar />;
+  if (usuario && !perfil && estadoAcceso === 'sinInvitacion') return <PantallaSinInvitacion />;
+  if (usuario && !perfil) return <Cargando texto="Revisando tu acceso…" />;
   if (!perfil) return <Login />;
   return (
     <Routes>

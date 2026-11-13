@@ -25,6 +25,8 @@ Repositorio en GitHub, deploy en Vercel, datos en Firebase. Commits con `6253381
 
 ## Pendiente (siguientes módulos)
 
+- Acceso solo por invitación (`invitaciones/{correo}` → rol + iglesia), correo verificado, cierre por inactividad 1 h (`src/lib/sesion.tsx`). Detalle en SEGURIDAD.md.
+- Finanzas importa Excel (`src/modulos/finanzas/importar/`): ids `imp-<hash>` o columna "ID Jeivi" para no duplicar; personas sin cuenta = `ext:<slug>`, se vinculan en Resumen.
 - Hechos: Lectura, Cumpleaños, Finanzas, Eventos, Anuncios, Solicitudes, Usuarios, Configuración.
 - Suscriptores (`iglesias/{ig}/suscriptores`) llevan `temas: ['lectura'|'anuncios']`; sin el campo = lectura.
 - `/api/enviar-anuncio` verifica el ID token de Firebase y el nivel (≥ diácono) con `verificarUsuario`.

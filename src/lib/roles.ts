@@ -4,7 +4,7 @@
  *  - pastor:     casi todo (usuarios, finanzas, ciclos, contenidos) pero no la configuración de la app.
  *  - diacono:    entra a los módulos, edita cosas básicas, genera banners, anuncios y links de registro;
  *                ve su propio estado de cuenta en Finanzas.
- *  - pendiente:  cuenta nueva que un pastor debe aprobar como diácono.
+ *  - pendiente:  sin acceso (bloqueado). Las cuentas nuevas solo existen si alguien las invitó.
  *
  * La congregación NO tiene usuario: participa por los links públicos que generan los diáconos
  * (suscribirse a la lectura, registrar cumpleaños, etc.).
@@ -18,7 +18,7 @@ export const ETIQUETA_ROL: Record<Rol, string> = {
   superadmin: 'Super admin',
   pastor: 'Pastor (admin)',
   diacono: 'Diácono',
-  pendiente: 'Pendiente de aprobación',
+  pendiente: 'Sin acceso',
 };
 
 export function tieneNivel(rol: Rol | undefined, minimo: Rol): boolean {

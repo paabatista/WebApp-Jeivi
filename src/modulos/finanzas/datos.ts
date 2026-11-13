@@ -1,3 +1,4 @@
+import type { Perfil } from '../../lib/sesion';
 import { IGLESIA_ID } from '../../lib/firebase';
 
 /**
@@ -35,6 +36,10 @@ export interface Cargo {
   descripcion?: string;
   creado: string;
   creadoPor: string;
+  /** Si vino de un Excel: de qué archivo y hoja (para poder reemplazarlo al subirlo otra vez). */
+  importacion?: Importacion;
+  /** Nombre con el que venía en el Excel antes de vincularlo a una cuenta. */
+  nombreExcel?: string;
 }
 
 export const METODOS = ['Efectivo', 'Yappy', 'Transferencia', 'Otro'] as const;
@@ -51,6 +56,10 @@ export interface Pago {
   nota?: string;
   creado: string;
   registradoPor: string;
+  /** Si vino de un Excel: de qué archivo y hoja (para poder reemplazarlo al subirlo otra vez). */
+  importacion?: Importacion;
+  /** Nombre con el que venía en el Excel antes de vincularlo a una cuenta. */
+  nombreExcel?: string;
 }
 
 export interface Gasto {
@@ -65,7 +74,31 @@ export interface Gasto {
   campos: Record<string, string>;
   creado: string;
   registradoPor: string;
+  /** Si vino de un Excel: de qué archivo y hoja (para poder reemplazarlo al subirlo otra vez). */
+  importacion?: Importacion;
+  /** Nombre con el que venía en el Excel antes de vincularlo a una cuenta. */
+  nombreExcel?: string;
 }
+
+export interface Importacion {
+  archivo: string;
+  hoja: string;
+  fecha: string;
+}
+
+/**
+ * Diáconos que aún no tienen cuenta en Jeivi (vienen de un Excel): se guardan con un id
+ * "ext:nombre" y luego un pastor los vincula con su usuario.
+ */
+export const esExterno = (uid: string) => uid.startsWith('ext:');
+export const uidExterno = (nombre: string) =>
+  'ext:' +
+  nombre
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
 
 const base = `iglesias/${IGLESIA_ID}`;
 export const RUTA_CONCEPTOS = `${base}/finConceptos`;
@@ -171,4 +204,24 @@ export function resumenDeuda(e: EstadoCuenta): string {
       return `${c.conceptoNombre} ${dinero(c.saldo)}${rango ? ` (${rango})` : ''}`;
     })
     .join(', ');
+}
+
+export interface PersonaFin {
+  uid: string;
+  nombre: string;
+  whatsapp?: string;
+  /** Aún no tiene cuenta en Jeivi (vino de un Excel). */
+  externo: boolean;
+}
+
+/** Usuarios del equipo + personas "sin cuenta" que aparecen en cargos o aportes. */
+export function personasConMovimientos(usuarios: Perfil[], cargos: Cargo[], pagos: Pago[]): PersonaFin[] {
+  const out: PersonaFin[] = usuarios.map((u) => ({ uid: u.uid, nombre: u.nombre, whatsapp: u.whatsapp, externo: false }));
+  const vistos = new Set(out.map((p) => p.uid));
+  for (const m of [...cargos, ...pagos]) {
+    if (vistos.has(m.diaconoUid)) continue;
+    vistos.add(m.diaconoUid);
+    out.push({ uid: m.diaconoUid, nombre: m.diaconoNombre, externo: true });
+  }
+  return out.sort((a, b) => Number(a.externo) - Number(b.externo) || a.nombre.localeCompare(b.nombre));
 }
