@@ -1,0 +1,89 @@
+# Jeivi
+
+Plataforma modular para la gestión de la iglesia (estilo Odoo): un lanzador de "apps" donde se van sumando módulos.
+Hecha para **Ministerio Jesucristo Imperio de Vida**, preparada para que más adelante la usen otras iglesias.
+
+**Stack:** React + Vite + TypeScript · Firebase Authentication + Firestore · Vercel (hosting, funciones y cron) · Cloudinary (imágenes, plan gratis).
+
+## Módulos
+
+| Módulo | Estado | Quién lo ve |
+|---|---|---|
+| Lectura Bíblica (la Biblia en 6 meses + banner para WhatsApp + correo diario) | ✅ Listo | Todos |
+| Usuarios (aprobar cuentas y asignar niveles) | ✅ Listo | Pastor y super admin |
+| Configuración (nombre, colores, logo, módulos activos, Cloudinary) | ✅ Listo | Super admin |
+| Cumpleaños, Finanzas, Eventos, Anuncios, Solicitudes | 🔜 Próximamente | — |
+
+### Niveles de acceso
+
+| Nivel | Puede |
+|---|---|
+| **Super admin** | Todo, incluida la configuración de la app |
+| **Pastor (admin)** | Usuarios, ciclos de lectura, imágenes, contenidos. No toca la configuración de la app |
+| **Ejecutivo / Diácono** | Entra a los módulos, edita cosas básicas (lectura y nota del día), crea banners y anuncios |
+| **Miembro** | Ve la lectura y se suscribe (correo de lectura diaria; luego cumpleaños y tablero informativo). **No crea banners** |
+| **Pendiente** | Solo ve la lectura del día (si la iglesia exige aprobar cuentas) |
+
+## Probar en tu computadora
+
+```bash
+npm install
+npm run dev
+```
+
+Abre http://localhost:5180. Sin archivo `.env` la app arranca en **modo demo** (datos en el navegador, usuario super admin) para que puedas verla sin Firebase.
+
+```bash
+npm test
+```
+
+## Puesta en marcha (una sola vez)
+
+### 1. GitHub
+Crea un repositorio vacío (privado recomendado) y sube esta carpeta. El archivo `.env` **nunca** se sube (está en `.gitignore`); las claves van en Vercel.
+
+### 2. Firebase
+1. Crea un proyecto en https://console.firebase.google.com (plan gratis Spark es suficiente).
+2. **Authentication → Método de acceso:** activa *Google*, *Correo electrónico/contraseña* y *Microsoft*.
+   - Microsoft pide un *Application ID* y *secret* de Azure: https://portal.azure.com → App registrations → New registration → tipo de cuenta "cualquier directorio y cuentas personales de Microsoft" → en *Redirect URI* pega la URL que muestra Firebase (`https://TU-PROYECTO.firebaseapp.com/__/auth/handler`) → copia el *Application (client) ID* y crea un *client secret*.
+3. **Authentication → Configuración → Dominios autorizados:** agrega tu dominio de Vercel (ej. `jeivi.vercel.app`) y el dominio propio si lo usas.
+4. **Firestore Database:** créala en modo producción.
+5. Publica las reglas e índices (con Firebase CLI) o copia `firestore.rules` en la consola:
+   ```bash
+   npx firebase-tools deploy --only firestore --project TU-PROYECTO
+   ```
+6. **Configuración del proyecto → Tus apps → Web:** registra una app y copia los valores a las variables `VITE_FIREBASE_*`.
+7. **Configuración del proyecto → Cuentas de servicio → Generar nueva clave privada:** ese JSON va en `FIREBASE_SERVICE_ACCOUNT` (solo en Vercel).
+
+### 3. Vercel
+1. *Add New → Project* → importa el repositorio de GitHub (Vercel detecta Vite).
+2. En *Settings → Environment Variables* copia todas las variables de `.env.example` con sus valores.
+3. `CRON_SECRET`: cualquier texto largo y aleatorio. Vercel lo usa para llamar al cron.
+4. Cada `git push` a `main` publica automáticamente.
+
+### 4. Tu usuario super admin
+1. Entra a la app publicada e inicia sesión (Google, Microsoft o correo).
+2. En Firebase → Firestore → colección `users` → tu documento → cambia el campo `rol` a `superadmin`.
+3. Recarga la app: ya verás *Usuarios* y *Configuración*. Desde ahí nombras a los pastores y ejecutivos.
+
+### 5. Correo diario (opcional pero recomendado)
+El cron `/api/cron/lectura-diaria` corre de lunes a viernes a las 5:00 a.m. (hora de Panamá) y envía la lectura a quienes la activaron en *Mi perfil*.
+
+- **Resend** (3.000 correos/mes gratis): crea cuenta en https://resend.com, verifica el dominio de la iglesia y usa `EMAIL_PROVIDER=resend`, `RESEND_API_KEY`, `EMAIL_FROM=Jeivi <lectura@tu-dominio.com>`.
+- **Brevo** (300/día gratis, sin dominio propio): https://brevo.com, verifica el correo remitente y usa `EMAIL_PROVIDER=brevo`, `BREVO_API_KEY`.
+
+Prueba manual (te llega solo a ti):
+```bash
+curl -H "Authorization: Bearer TU_CRON_SECRET" "https://TU-APP.vercel.app/api/cron/lectura-diaria?prueba=tu@correo.com"
+```
+
+### 6. Imágenes (Cloudinary)
+Crea cuenta gratis en https://cloudinary.com → *Settings → Upload → Upload presets → Add* → modo **Unsigned**. Copia el *cloud name* y el nombre del preset en Jeivi → Configuración → Imágenes. Luego los pastores suben fotos al banco desde *Lectura Bíblica → Administrar*.
+
+## Cómo funciona la lectura
+
+- El plan (26 semanas, lunes a viernes, 130 lecturas) está en `src/modulos/lectura/plan.ts`, transcrito del Excel de la iglesia.
+- Los **ciclos** los define un pastor (fecha de inicio, normalmente primer lunes de enero y de julio). Las **pausas** (feriados, retiros) no avanzan el plan.
+- Sábado y domingo se muestra "Día para ponerte al día" con el resumen de la semana.
+- Un ejecutivo puede reemplazar la lectura de cualquier día (escribiéndola o con el selector de libro/capítulo/versículo) y añadir una nota o versículo. Los hermanos eligen en qué versión leer.
+- El banner se genera en el navegador (canvas) en 3 formatos (cuadrado, vertical, estado de WhatsApp) y 3 diseños, con 8 fondos incluidos, fotos del banco de la iglesia o una foto propia (que no se sube a ningún servidor). En el celular el botón *Compartir en WhatsApp* envía la imagen directamente. Solo ejecutivos, pastores y super admin crean banners.

@@ -1,0 +1,75 @@
+rules_version = '2';
+
+// Reglas de seguridad de Jeivi.
+// Niveles: superadmin(100) > pastor(80) > ejecutivo(50) > miembro(20) > pendiente(10)
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function autenticado() { return request.auth != null; }
+    function rutaYo() { return /databases/$(database)/documents/users/$(request.auth.uid); }
+    function yo() { return get(rutaYo()).data; }
+    function nivel(rol) {
+      return rol == 'superadmin' ? 100 : rol == 'pastor' ? 80 : rol == 'ejecutivo' ? 50 : rol == 'miembro' ? 20 : 10;
+    }
+    function miNivel() { return autenticado() && exists(rutaYo()) ? nivel(yo().rol) : 0; }
+    function deMiIglesia(ig) { return autenticado() && exists(rutaYo()) && yo().iglesiaId == ig; }
+    function rolPorDefecto(ig) {
+      let ruta = /databases/$(database)/documents/iglesias/$(ig);
+      return exists(ruta) ? get(ruta).data.get('rolPorDefecto', 'miembro') : 'miembro';
+    }
+
+    // ---------- Usuarios ----------
+    match /users/{uid} {
+      allow read: if autenticado() && (
+        request.auth.uid == uid ||
+        (miNivel() >= 80 && resource.data.iglesiaId == yo().iglesiaId)
+      );
+
+      // Cada quien crea su propio perfil, con rol 'pendiente' o el rol por defecto de la iglesia.
+      // El primer super admin se asigna a mano desde la consola de Firebase.
+      allow create: if autenticado()
+        && request.auth.uid == uid
+        && request.resource.data.uid == uid
+        && request.resource.data.email == request.auth.token.email.lower()
+        && (request.resource.data.rol == 'pendiente'
+            || (request.resource.data.rol == 'miembro' && rolPorDefecto(request.resource.data.iglesiaId) == 'miembro'));
+
+      allow update: if autenticado() && (
+        // El propio usuario: nombre, WhatsApp, suscripción… pero no su rol ni su iglesia.
+        (request.auth.uid == uid
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['rol', 'iglesiaId', 'uid', 'email']))
+        ||
+        // Pastores y super admin: solo cambian el rol de alguien de nivel inferior, a un nivel inferior al suyo.
+        (miNivel() >= 80
+          && request.auth.uid != uid
+          && resource.data.iglesiaId == yo().iglesiaId
+          && nivel(resource.data.rol) < miNivel()
+          && nivel(request.resource.data.rol) < miNivel()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rol']))
+      );
+
+      allow delete: if miNivel() >= 100;
+
+      match /progresoLectura/{cicloId} {
+        allow read, write: if autenticado() && request.auth.uid == uid;
+      }
+    }
+
+    // ---------- Iglesia ----------
+    match /iglesias/{ig} {
+      // Lectura pública: nombre, colores y logo se muestran en la pantalla de login.
+      allow read: if true;
+      allow write: if deMiIglesia(ig) && miNivel() >= 100;
+
+      // Módulo Lectura Bíblica
+      match /lectura/config {
+        allow read: if deMiIglesia(ig);
+        allow write: if deMiIglesia(ig) && miNivel() >= 80;
+      }
+      match /lecturaAjustes/{dia} {
+        allow read: if deMiIglesia(ig);
+        allow write: if deMiIglesia(ig) && miNivel() >= 50;
+      }
+    }
+  }
+}

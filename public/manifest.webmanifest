@@ -1,0 +1,11 @@
+{
+  "name": "Jeivi",
+  "short_name": "Jeivi",
+  "description": "Plataforma de la iglesia",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6f4f9",
+  "theme_color": "#4a2c6d",
+  "lang": "es",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
