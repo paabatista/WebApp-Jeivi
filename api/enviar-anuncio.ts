@@ -14,7 +14,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
   if (!origenPermitido(req)) return res.status(403).json({ error: 'Origen no permitido' });
   try {
-    const usuario = await verificarUsuario(req.headers.authorization, 50);
+    const usuario = await verificarUsuario(req.headers.authorization, 30);
     const ig = usuario.iglesiaId;
     const anuncioId = String((req.body as { anuncioId?: string })?.anuncioId || '');
     if (!anuncioId) return res.status(400).json({ error: 'Falta el anuncio' });

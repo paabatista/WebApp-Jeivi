@@ -32,9 +32,9 @@ export function LecturaModulo() {
       <Routes>
         <Route index element={<Hoy />} />
         <Route path="plan" element={<PlanCompleto />} />
-        {puede('diacono') && <Route path="banner" element={<PaginaBanner />} />}
-        {puede('diacono') && <Route path="suscriptores" element={<SuscriptoresLectura />} />}
-        {puede('diacono') && <Route path="admin" element={<AdminLectura />} />}
+        {puede('lider') && <Route path="banner" element={<PaginaBanner />} />}
+        {puede('lider') && <Route path="suscriptores" element={<SuscriptoresLectura />} />}
+        {puede('lider') && <Route path="admin" element={<AdminLectura />} />}
         <Route path="*" element={<Navigate to="/m/lectura" replace />} />
       </Routes>
     </Layout>
@@ -155,7 +155,7 @@ function Hoy() {
               Próxima lectura: <strong>{lect.lecturaDe(sig)}</strong>
             </p>
           )}
-          {puede('diacono') && (
+          {puede('lider') && (
             <div className="acciones">
               <button className="boton claro" onClick={() => nav('/m/lectura/banner?finde=1')}>
                 <ImageIcon size={18} /> Crear banner
@@ -164,7 +164,7 @@ function Hoy() {
           )}
         </section>
         {estado.tipo === 'finDeSemana' && estado.semana.length > 0 && (
-          <SemanaActual ciclo={estado.ciclo} semana={estado.semana[0].semana} leidos={leidos} alternar={alternar} hoy={hoy} lecturaDe={lect.lecturaDe} conBanner={puede('diacono')} />
+          <SemanaActual ciclo={estado.ciclo} semana={estado.semana[0].semana} leidos={leidos} alternar={alternar} hoy={hoy} lecturaDe={lect.lecturaDe} conBanner={puede('lider')} />
         )}
         <Progreso ciclo={estado.ciclo} leidos={leidos} hoy={hoy} />
       </div>
@@ -194,7 +194,7 @@ function Hoy() {
         {nota && <p className="hero-nota">“{nota}”</p>}
         <p>{capitalizar(formatoLargo(hoy))}</p>
         <div className="acciones">
-          {puede('diacono') && (
+          {puede('lider') && (
             <button className="boton claro" onClick={() => nav(`/m/lectura/banner?dia=${dia.indice}`)}>
               <ImageIcon size={18} /> Crear banner para WhatsApp
             </button>
@@ -207,7 +207,7 @@ function Hoy() {
           </button>
         </div>
       </section>
-      <SemanaActual ciclo={estado.ciclo} semana={dia.semana} leidos={leidos} alternar={alternar} hoy={hoy} lecturaDe={lect.lecturaDe} conBanner={puede('diacono')} />
+      <SemanaActual ciclo={estado.ciclo} semana={dia.semana} leidos={leidos} alternar={alternar} hoy={hoy} lecturaDe={lect.lecturaDe} conBanner={puede('lider')} />
       <Progreso ciclo={estado.ciclo} leidos={leidos} hoy={hoy} />
     </div>
   );
@@ -268,12 +268,12 @@ function PlanCompleto() {
                         {ajustado && <span className="chip mini">ajustado</span>}
                       </strong>
                     </div>
-                    {puede('diacono') && (
+                    {puede('lider') && (
                       <Link to={`/m/lectura/banner?dia=${d.indice}`} className="icono-boton" title="Banner">
                         <ChevronRight size={16} />
                       </Link>
                     )}
-                    {puede('diacono') && (
+                    {puede('lider') && (
                       <Link to={`/m/lectura/admin?dia=${d.indice}`} className="icono-boton" title="Ajustar">
                         <Pencil size={14} />
                       </Link>

@@ -30,7 +30,7 @@ export function Lanzador() {
             Tu cuenta no tiene acceso a los módulos. Pide a un pastor que te asigne un nivel.
           </div>
         )}
-        {perfil && perfil.rol !== 'pendiente' && iglesia.modulosActivos.includes('finanzas') && <EstadoCuentaResumen />}
+        {perfil && tieneNivel(perfil.rol, 'diacono') && iglesia.modulosActivos.includes('finanzas') && <EstadoCuentaResumen />}
         <div className="rejilla-apps">
           {visibles.map((m) => (
             <Link key={m.id} to={`/m/${m.id}`} className="app-tile">

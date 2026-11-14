@@ -15,6 +15,7 @@ const DESCRIPCION_ROL: Record<Rol, string> = {
   superadmin: 'Todo, incluida la configuración de la app. Solo se asigna desde la consola de Firebase y no se puede quitar ni borrar desde Jeivi.',
   pastor: 'Administra usuarios, invitaciones, finanzas y contenidos. No cambia la configuración de la app.',
   diacono: 'Entra a los módulos, edita cosas básicas, genera banners y links de registro, y ve su estado de cuenta.',
+  lider: 'Solo Lectura Bíblica, Cumpleaños, Solicitudes y Anuncios (banners, links y registros). No ve Finanzas ni Eventos.',
   pendiente: 'Sin acceso: no ve nada. Sirve para bloquear a alguien sin borrarlo.',
 };
 
@@ -26,7 +27,7 @@ function Invitaciones({ usuarios }: { usuarios: Perfil[] }) {
   const [rol, setRol] = useState<Invitacion['rol']>('diacono');
   const [msg, setMsg] = useState('');
   const [error, setError] = useState('');
-  const opciones = rolesAsignables(perfil?.rol).filter((r): r is Invitacion['rol'] => r === 'pastor' || r === 'diacono');
+  const opciones = rolesAsignables(perfil?.rol).filter((r): r is Invitacion['rol'] => r === 'pastor' || r === 'diacono' || r === 'lider');
 
   useEffect(
     () => escucharColeccion<Invitacion>(RUTA_INVITACIONES, (d) => setLista([...d].sort((a, b) => b.creado.localeCompare(a.creado))), ['iglesiaId', IGLESIA_ID]),
@@ -194,6 +195,10 @@ export function Usuarios() {
             <div>
               <strong>{usuarios.filter((u) => u.rol === 'diacono').length}</strong>
               <span>diáconos</span>
+            </div>
+            <div>
+              <strong>{usuarios.filter((u) => u.rol === 'lider').length}</strong>
+              <span>líderes</span>
             </div>
             <div>
               <strong>{suscritos}</strong>

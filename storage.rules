@@ -15,7 +15,11 @@ service firebase.storage {
       return request.auth != null
         && firestore.exists(/databases/(default)/documents/users/$(request.auth.uid))
         && perfil().iglesiaId == ig
-        && perfil().rol in ['superadmin', 'pastor', 'diacono'];
+        && perfil().rol in ['superadmin', 'pastor', 'diacono', 'lider'];
+    }
+    // Finanzas: los líderes no ven nada.
+    function finanzas(ig) {
+      return equipo(ig) && perfil().rol in ['superadmin', 'pastor', 'diacono'];
     }
     function pastor(ig) {
       return equipo(ig) && perfil().rol in ['superadmin', 'pastor'];
@@ -41,15 +45,16 @@ service firebase.storage {
 
     // Comprobantes de finanzas (fotos o PDF): los suben pastores y los diáconos al reportar su pago; los ve el equipo.
     match /iglesias/{ig}/finanzas/{mes}/{archivo} {
-      allow read: if equipo(ig);
-      allow create: if equipo(ig) && (imagen(10) || pdf(10));
+      allow read: if finanzas(ig);
+      allow create: if finanzas(ig) && (imagen(10) || pdf(10));
     }
 
     // Banners, fotos de cumpleaños, imágenes de anuncios/eventos, logo, banco de imágenes.
     // Las de anuncios, eventos y la marca se ven en los links públicos.
     match /iglesias/{ig}/{modulo}/{mes}/{archivo} {
       allow read: if modulo in ['anuncios', 'eventos', 'marca', 'lectura'] || equipo(ig);
-      allow create: if equipo(ig) && modulo != 'publico' && modulo != 'finanzas' && imagen(10);
+      allow create: if equipo(ig) && modulo != 'publico' && modulo != 'finanzas' && imagen(10)
+        && (perfil().rol != 'lider' || modulo in ['lectura', 'cumpleanos', 'anuncios', 'solicitudes']);
     }
   }
 }

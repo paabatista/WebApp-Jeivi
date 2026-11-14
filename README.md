@@ -27,6 +27,7 @@ Solo el **equipo** tiene usuario, y **solo por invitación** (Usuarios → Invit
 | **Super admin** | Todo, incluida la configuración de la app |
 | **Pastor (admin)** | Usuarios, finanzas completas, ciclos de lectura, imágenes. No toca la configuración de la app |
 | **Diácono** | Entra a los módulos, edita lo básico, crea banners y **links de registro**, ve **su estado de cuenta** |
+| **Líder** | Solo **Lectura Bíblica, Cumpleaños, Solicitudes y Anuncios** (banners, links y registros). No ve Finanzas ni Eventos |
 | **Sin acceso** (`pendiente`) | Bloqueado: no ve nada |
 
 La **congregación no tiene usuario**. Un diácono genera un **link** desde el módulo (Lectura, Cumpleaños, Anuncios, Solicitudes, o dentro de cada Evento) y lo comparte por WhatsApp. Quien lo abre solo ve ese formulario: no puede ver ni modificar ningún dato. Los links se pueden desactivar en cualquier momento.

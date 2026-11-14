@@ -28,7 +28,7 @@ export function adminAuth() {
   return getAuth();
 }
 
-const NIVEL: Record<string, number> = { superadmin: 100, pastor: 80, diacono: 50 };
+const NIVEL: Record<string, number> = { superadmin: 100, pastor: 80, diacono: 50, lider: 30 };
 
 /** Verifica el token del usuario y que tenga al menos el nivel pedido. Devuelve su perfil. */
 export async function verificarUsuario(authorization: string | undefined, nivelMinimo: number) {

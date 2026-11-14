@@ -8,7 +8,7 @@ import type { Rol } from './roles';
 export interface Invitacion {
   email: string;
   nombre: string;
-  rol: Extract<Rol, 'pastor' | 'diacono'>;
+  rol: Extract<Rol, 'pastor' | 'diacono' | 'lider'>;
   iglesiaId: string;
   invitadoPor: string;
   invitadoPorNombre: string;

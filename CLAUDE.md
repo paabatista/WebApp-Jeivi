@@ -8,7 +8,7 @@ Repositorio en GitHub, deploy en Vercel, datos en Firebase. Commits con `6253381
 - `src/core/modulos.ts` — **registro de módulos** (id, ícono, color, nivel mínimo, estado `activo`/`proximamente`). Es la fuente del lanzador tipo Odoo.
 - `src/App.tsx` — `COMPONENTES` mapea id de módulo → componente. Un módulo sin componente muestra la pantalla "Próximamente".
 - `src/lib/sesion.tsx` — Auth (Google, Microsoft, correo), perfil en `users/{uid}`, config de la iglesia en `iglesias/{id}`.
-- `src/lib/roles.ts` — niveles: superadmin 100 > pastor 80 > diacono 50 > pendiente 10. Deben coincidir con `firestore.rules`.
+- `src/lib/roles.ts` — niveles: superadmin 100 > pastor 80 > diacono 50 > lider 30 > pendiente 10. Líder: solo lectura, cumpleanos, anuncios y solicitudes (nada de finanzas/eventos; Storage también le niega `finanzas/`). Deben coincidir con `firestore.rules`.
   - **No existe el rol "miembro"** (decisión de Pablo): solo el equipo tiene usuario. La congregación participa por **links públicos** que genera un diácono (`src/lib/enlaces.ts`, `src/core/GestorEnlaces.tsx`, ruta `/p/:token` en `src/publico/`). Las reglas solo les permiten *crear* en la colección del módulo si el link existe y está activo.
   - Finanzas: los diáconos aportan (luz, mantenimiento…). Cada uno ve solo su estado de cuenta (`finCargos`/`finPagos` filtrados por `diaconoUid`); el lanzador muestra "al día" o "debes X".
 - `src/lib/datos.ts` — `escucharDoc`, `escucharColeccion`, `guardarDoc`, `borrarDoc`. Sin `.env` usa localStorage (**modo demo**).
@@ -30,7 +30,7 @@ Repositorio en GitHub, deploy en Vercel, datos en Firebase. Commits con `6253381
 - Historial automático en `src/lib/datos.ts` (guardarDoc/borrarDoc/ejecutarLote escriben en `iglesias/{ig}/historial`, append-only). Archivos en `src/lib/almacen.ts` (Storage si `VITE_STORAGE_ACTIVO=1`, registro en `iglesias/{ig}/archivos`). Ver STORAGE.md.
 - Hechos: Lectura, Cumpleaños, Finanzas, Eventos, Anuncios, Solicitudes, Usuarios, Configuración.
 - Suscriptores (`iglesias/{ig}/suscriptores`) llevan `temas: ['lectura'|'anuncios']`; sin el campo = lectura.
-- `/api/enviar-anuncio` verifica el ID token de Firebase y el nivel (≥ diácono) con `verificarUsuario`.
+- `/api/enviar-anuncio` verifica el ID token de Firebase y el nivel (≥ líder) con `verificarUsuario`.
 - `GeneradorBanner` es reutilizable (props `etiquetas`, `separarComas`) para lectura, anuncios y eventos.
 - Fotos: con Cloudinary configurado se suben allí; si no, se guardan reducidas (~520 px) como data URL en el registro (`src/lib/fotos.ts`).
 

@@ -1,7 +1,8 @@
 rules_version = '2';
 
 // Reglas de seguridad de Jeivi. Todo lo que no está permitido aquí queda DENEGADO.
-// Usuarios (solo el equipo, por invitación): superadmin(100) > pastor(80) > diacono(50) > pendiente/sin acceso(10).
+// Usuarios (solo el equipo, por invitación): superadmin(100) > pastor(80) > diacono(50) > lider(30) > pendiente/sin acceso(10).
+// Los líderes solo usan Lectura, Cumpleaños, Anuncios y Solicitudes: nada de Finanzas ni Eventos.
 // Cada usuario solo ve los datos de SU iglesia (iglesiaId).
 // La congregación NO tiene usuario: solo puede CREAR registros a través de un link activo
 // (suscribirse, registrar cumpleaños, inscribirse a un evento, enviar una solicitud).
@@ -13,7 +14,7 @@ service cloud.firestore {
     function rutaYo() { return /databases/$(database)/documents/users/$(request.auth.uid); }
     function yo() { return get(rutaYo()).data; }
     function nivel(rol) {
-      return rol == 'superadmin' ? 100 : rol == 'pastor' ? 80 : rol == 'diacono' ? 50 : 10;
+      return rol == 'superadmin' ? 100 : rol == 'pastor' ? 80 : rol == 'diacono' ? 50 : rol == 'lider' ? 30 : 10;
     }
     function miNivel() { return autenticado() && exists(rutaYo()) ? nivel(yo().rol) : 0; }
     function deMiIglesia(ig) { return autenticado() && exists(rutaYo()) && yo().iglesiaId == ig; }
@@ -45,7 +46,7 @@ service cloud.firestore {
         && request.resource.data.email == miCorreo()
         && exists(rutaInvitacion(miCorreo()))
         && request.resource.data.rol == get(rutaInvitacion(miCorreo())).data.rol
-        && request.resource.data.rol in ['pastor', 'diacono']
+        && request.resource.data.rol in ['pastor', 'diacono', 'lider']
         && request.resource.data.iglesiaId == get(rutaInvitacion(miCorreo())).data.iglesiaId;
 
       allow update: if autenticado() && (
@@ -81,15 +82,15 @@ service cloud.firestore {
         (miNivel() >= 80 && resource.data.iglesiaId == yo().iglesiaId)
       );
       allow list: if miNivel() >= 80 && resource.data.iglesiaId == yo().iglesiaId;
-      // Super admin invita pastores y diáconos; un pastor solo diáconos. Nadie invita super admins.
+      // Super admin invita pastores, diáconos y líderes; un pastor solo diáconos y líderes. Nadie invita super admins.
       allow create, update: if miNivel() >= 80
         && request.resource.data.iglesiaId == yo().iglesiaId
         && request.resource.data.email == correo
-        && request.resource.data.rol in (miNivel() >= 100 ? ['pastor', 'diacono'] : ['diacono'])
+        && request.resource.data.rol in (miNivel() >= 100 ? ['pastor', 'diacono', 'lider'] : ['diacono', 'lider'])
         && texto(request.resource.data.nombre, 1, 80);
       allow delete: if miNivel() >= 80
         && resource.data.iglesiaId == yo().iglesiaId
-        && (miNivel() >= 100 || resource.data.rol == 'diacono');
+        && (miNivel() >= 100 || resource.data.rol in ['diacono', 'lider']);
     }
 
     // ---------- Iglesia ----------
@@ -101,8 +102,10 @@ service cloud.firestore {
       // Links públicos: se abren por su id (token), pero no se pueden listar sin ser del equipo.
       match /enlaces/{token} {
         allow get: if true;
-        allow list: if equipo(ig, 50);
-        allow create, update: if equipo(ig, 50);
+        allow list: if equipo(ig, 30);
+        allow create: if equipo(ig, 50) || (equipo(ig, 30) && request.resource.data.modulo in ['lectura', 'cumpleanos', 'anuncios', 'solicitudes']);
+        allow update: if equipo(ig, 50) || (equipo(ig, 30) && resource.data.modulo in ['lectura', 'cumpleanos', 'anuncios', 'solicitudes']
+                                             && request.resource.data.modulo == resource.data.modulo);
         allow delete: if equipo(ig, 80);
       }
 
@@ -113,12 +116,12 @@ service cloud.firestore {
       }
       match /lecturaAjustes/{dia} {
         allow read: if true;
-        allow write: if equipo(ig, 50);
+        allow write: if equipo(ig, 30);
       }
       match /suscriptores/{id} {
-        allow read, update: if equipo(ig, 50);
+        allow read, update: if equipo(ig, 30);
         allow delete: if equipo(ig, 80);
-        allow create: if equipo(ig, 50) || (
+        allow create: if equipo(ig, 30) || (
           request.resource.data.keys().hasOnly(['nombre', 'email', 'whatsapp', 'enlace', 'activo', 'creado', 'temas'])
           && (enlaceValido(ig, request.resource.data.enlace, 'lectura') || enlaceValido(ig, request.resource.data.enlace, 'anuncios'))
           && (!('temas' in request.resource.data) || (request.resource.data.temas is list && request.resource.data.temas.size() <= 2))
@@ -131,20 +134,20 @@ service cloud.firestore {
       }
 
       // ----- Cumpleaños -----
-      // Encargado del mes (tipo ticket): la pastora asigna; el diácono encargado solo marca a quién felicitó.
+      // Encargado del mes (tipo ticket): la pastora asigna; el encargado (diácono o líder) solo marca a quién felicitó.
       match /cumpleEncargos/{mes} {
-        allow read: if equipo(ig, 50);
+        allow read: if equipo(ig, 30);
         allow create, delete: if equipo(ig, 80);
         allow update: if equipo(ig, 80) || (
-          equipo(ig, 50)
+          equipo(ig, 30)
           && resource.data.diaconoUid == request.auth.uid
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['hechos', 'estado', 'actualizado'])
         );
       }
       match /cumpleanos/{id} {
-        allow read, update: if equipo(ig, 50);
+        allow read, update: if equipo(ig, 30);
         allow delete: if equipo(ig, 80);
-        allow create: if equipo(ig, 50) || (
+        allow create: if equipo(ig, 30) || (
           request.resource.data.keys().hasOnly(['nombre', 'dia', 'mes', 'anio', 'foto', 'telefono', 'familia', 'grupo',
                                                 'parentesco', 'origen', 'enlace', 'autorizaFoto', 'creado'])
           && request.resource.data.origen == 'link'
@@ -160,8 +163,8 @@ service cloud.firestore {
       // ----- Anuncios / tablero -----
       // Los marcados como públicos los ve cualquiera (tablero del link); el resto solo el equipo.
       match /anuncios/{id} {
-        allow read: if resource.data.publico == true || equipo(ig, 50);
-        allow create, update: if equipo(ig, 50);
+        allow read: if resource.data.publico == true || equipo(ig, 30);
+        allow create, update: if equipo(ig, 30);
         allow delete: if equipo(ig, 80);
       }
 
@@ -189,9 +192,9 @@ service cloud.firestore {
       // ----- Solicitudes -----
       // Las confidenciales solo las ven pastores y super admin.
       match /solicitudes/{id} {
-        allow read, update: if equipo(ig, 80) || (equipo(ig, 50) && resource.data.confidencial == false);
+        allow read, update: if equipo(ig, 80) || (equipo(ig, 30) && resource.data.confidencial == false);
         allow delete: if equipo(ig, 80);
-        allow create: if equipo(ig, 50) || (
+        allow create: if equipo(ig, 30) || (
           request.resource.data.keys().hasOnly(['tipo', 'nombre', 'telefono', 'email', 'mensaje', 'confidencial', 'estado',
                                                 'seguimiento', 'origen', 'enlace', 'creado'])
           && request.resource.data.origen == 'link'
@@ -211,7 +214,7 @@ service cloud.firestore {
       // Solo se AGREGA: nadie (ni el super admin) puede editar ni borrar el historial desde la app.
       match /historial/{id} {
         allow read: if equipo(ig, 80);
-        allow create: if equipo(ig, 50)
+        allow create: if equipo(ig, 30)
           && request.resource.data.uid == request.auth.uid
           && request.resource.data.accion in ['crear', 'editar', 'borrar', 'lote', 'banner', 'archivo']
           && request.resource.data.modulo is string
@@ -221,8 +224,8 @@ service cloud.firestore {
 
       // Registro de archivos (banners, fotos, comprobantes): también permanente.
       match /archivos/{id} {
-        allow read: if equipo(ig, 50);
-        allow create: if equipo(ig, 50) && request.resource.data.subidoPor == request.auth.uid;
+        allow read: if equipo(ig, 30);
+        allow create: if equipo(ig, 30) && request.resource.data.subidoPor == request.auth.uid;
         allow update, delete: if false;
       }
 

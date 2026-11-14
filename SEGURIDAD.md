@@ -4,7 +4,7 @@
 
 ### 🔐 Acceso e identidad
 - **Login obligatorio** (Google o correo/contraseña con Firebase Auth). Sin sesión no se ve ningún módulo. La congregación solo entra a los links públicos de cada módulo, que únicamente permiten llenar un formulario.
-- **Solo por invitación.** Un pastor o el super admin invita el correo y elige el nivel (pastor o diácono). Quien entra con un correo no invitado ve "Tu correo no tiene acceso". Las reglas de Firestore lo exigen en el servidor.
+- **Solo por invitación.** Un pastor o el super admin invita el correo y elige el nivel (pastor, diácono o líder). Quien entra con un correo no invitado ve "Tu correo no tiene acceso". Las reglas de Firestore lo exigen en el servidor.
 - **Correo verificado.** Las cuentas con contraseña deben confirmar el enlace que llega al correo antes de entrar. Google ya viene verificado.
 - **Super admin fijo.** Solo se asigna desde la consola de Firebase. Desde Jeivi nadie puede crear, cambiar ni borrar un super admin.
 - **Cierre por inactividad (1 hora).** Si no hay actividad en 1 hora, la sesión se cierra. Al volver otro día también pide entrar de nuevo.
@@ -12,7 +12,7 @@
 ### 🛡️ Aislamiento de datos (`firestore.rules`)
 - Todo lo no permitido queda **denegado por defecto**.
 - Cada usuario solo ve los datos de **su iglesia** (`iglesiaId`).
-- **Pastor / super admin** ven todo lo de su iglesia. El **diácono** solo ve **su** estado de cuenta en Finanzas, y no ve las solicitudes confidenciales ni la lista de usuarios.
+- **Pastor / super admin** ven todo lo de su iglesia. El **diácono** solo ve **su** estado de cuenta en Finanzas, y no ve las solicitudes confidenciales ni la lista de usuarios. El **líder** solo entra a Lectura, Cumpleaños, Solicitudes (no confidenciales) y Anuncios: no ve nada de Finanzas ni Eventos.
 - Los links públicos solo pueden **crear** registros en su módulo, con campos y tamaños limitados, y solo mientras el link esté activo.
 - Las reglas corren en los servidores de Google, así que no se pueden saltar desde el navegador.
 - **Storage** (`storage.rules`): aislado por iglesia; solo el equipo sube (comprobantes solo pastores); la congregación solo puede subir fotos a la carpeta de un link activo; nada se sobrescribe ni se borra.
