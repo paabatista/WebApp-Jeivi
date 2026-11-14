@@ -86,3 +86,12 @@ describe('decidirAcciones', () => {
     expect(segunda[2]).toEqual({ tipo: 'actualizar', id: idLeo });
   });
 });
+
+describe('sinTitulo', () => {
+  it('quita hermano/hermana del nombre', async () => {
+    const { sinTitulo } = await import('./importarDatos');
+    expect(sinTitulo('Hna. María Gómez')).toBe('María Gómez');
+    expect(sinTitulo('Hermano Luis Mora')).toBe('Luis Mora');
+    expect(sinTitulo('Hernán Pérez')).toBe('Hernán Pérez');
+  });
+});

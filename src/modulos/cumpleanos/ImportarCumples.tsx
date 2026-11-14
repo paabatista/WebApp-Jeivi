@@ -7,6 +7,7 @@ import { explicarError } from '../../lib/errores';
 import { COLUMNA_ID, descargar, nuevoLibro } from '../finanzas/exportar';
 import { ACEPTA_ARCHIVOS, leerArchivo, type Hoja } from '../finanzas/importar/leerArchivo';
 import { normalizarNombre, texto } from '../finanzas/importar/normalizar';
+import { leerWord } from './leerWord';
 import { MESES, ORIGEN_CUMPLE, RUTA_CUMPLES, textoFecha, type Cumple } from './datos';
 import {
   CAMPOS_CUMPLE,
@@ -92,6 +93,7 @@ export function ImportarCumples({ lista }: { lista: Cumple[] }) {
   const [hojas, setHojas] = useState<Hoja[]>([]);
   const [hojaIdx, setHojaIdx] = useState(0);
   const [juntar, setJuntar] = useState(false);
+  const [esWord, setEsWord] = useState(false);
   const [filaEnc, setFilaEnc] = useState(0);
   const [mapeo, setMapeo] = useState<MapeoCumple>({});
   const [mesHoja, setMesHoja] = useState<number | null>(null);
@@ -101,7 +103,8 @@ export function ImportarCumples({ lista }: { lista: Cumple[] }) {
   const [error, setError] = useState('');
 
   const hoja = hojas[hojaIdx];
-  const hojasDeMes = useMemo(() => hojas.filter((h) => mesDeHoja(h.nombre)), [hojas]);
+  // Se pueden importar juntas: las hojas por mes de un Excel, o todas las tablas y listas de un Word.
+  const juntables = useMemo(() => (esWord ? hojas : hojas.filter((h) => mesDeHoja(h.nombre))), [hojas, esWord]);
 
   function prepararHoja(h: Hoja) {
     const fila = filaEncabezadoCumples(h);
@@ -117,12 +120,17 @@ export function ImportarCumples({ lista }: { lista: Cumple[] }) {
     setError('');
     setResultado('');
     try {
-      const hs = await leerArchivo(f);
-      const inicio = Math.max(0, hs.findIndex((h) => !/instruc|resumen/i.test(h.nombre)));
+      const esWord = /\.docx?$/i.test(f.name);
+      const hs = esWord ? await leerWord(f) : await leerArchivo(f);
+      // En Word se abre la tabla (o lista) más larga; en Excel, la primera hoja que no sea de instrucciones.
+      const inicio = esWord
+        ? hs.reduce((mejor, h, i) => (h.filas.length > hs[mejor].filas.length ? i : mejor), 0)
+        : Math.max(0, hs.findIndex((h) => !/instruc|resumen/i.test(h.nombre)));
       setArchivo(f);
       setHojas(hs);
       setHojaIdx(inicio);
-      setJuntar(hs.filter((h) => mesDeHoja(h.nombre)).length >= 2);
+      setEsWord(esWord);
+      setJuntar(esWord ? hs.length >= 2 : hs.filter((h) => mesDeHoja(h.nombre)).length >= 2);
       prepararHoja(hs[inicio]);
     } catch (err) {
       setError((err as Error).message || 'No se pudo leer el archivo.');
@@ -131,16 +139,16 @@ export function ImportarCumples({ lista }: { lista: Cumple[] }) {
 
   const filas = useMemo<FilaCumple[]>(() => {
     if (!hoja) return [];
-    if (juntar && hojasDeMes.length >= 2) {
+    if (juntar && juntables.length >= 2) {
       return marcarRepetidos(
-        hojasDeMes.flatMap((h) => {
+        juntables.flatMap((h) => {
           const fe = filaEncabezadoCumples(h);
           return procesarCumples(h, fe, sugerirMapeoCumples((h.filas[fe] || []).map(texto)), mesDeHoja(h.nombre));
         }),
       );
     }
     return marcarRepetidos(procesarCumples(hoja, filaEnc, mapeo, mesHoja));
-  }, [hoja, juntar, hojasDeMes, filaEnc, mapeo, mesHoja]);
+  }, [hoja, juntar, juntables, filaEnc, mapeo, mesHoja]);
 
   useEffect(() => {
     let vivo = true;
@@ -168,7 +176,7 @@ export function ImportarCumples({ lista }: { lista: Cumple[] }) {
     setError('');
     setResultado('');
     const ahora = new Date().toISOString();
-    const importacion = { archivo: archivo.name, hoja: juntar ? 'Hojas por mes' : hoja.nombre, fecha: ahora };
+    const importacion = { archivo: archivo.name, hoja: juntar ? (esWord ? 'Todo el documento' : 'Hojas por mes') : hoja.nombre, fecha: ahora };
     const porId = new Map(lista.map((c) => [c.id, c]));
     // Hijos y papás de la misma familia quedan en el mismo grupo.
     const grupos = new Map<string, string>();
@@ -239,14 +247,14 @@ export function ImportarCumples({ lista }: { lista: Cumple[] }) {
           <FileSpreadsheet size={22} /> Importar cumpleaños desde Excel
         </h2>
         <p className="suave">
-          Sube la lista que ya tienen (.xlsx, .xls o .csv). Jeivi reconoce las columnas y te muestra una vista previa antes de guardar. Cuando
+          Sube la lista que ya tienen: Excel (.xlsx, .xls, .csv) o Word (.docx), sea una tabla o una lista escrita. Jeivi reconoce las columnas y te muestra una vista previa antes de guardar. Cuando
           la actualicen, vuelvan a subirla: lo nuevo se agrega, lo que cambió se actualiza y nadie se duplica. A quien ya se registró por el
           link solo se le completan los datos que le falten.
         </p>
         <div className="acciones">
           <label className="boton primario subir-archivo">
             <Upload size={16} /> {archivo ? 'Subir otro archivo' : 'Elegir archivo'}
-            <input type="file" accept={ACEPTA_ARCHIVOS} hidden onChange={elegirArchivo} />
+            <input type="file" accept={`${ACEPTA_ARCHIVOS},.docx,.doc`} hidden onChange={elegirArchivo} />
           </label>
           <button className="boton" onClick={() => descargarPlantillaCumples()}>
             <Download size={16} /> Descargar plantilla
@@ -266,10 +274,14 @@ export function ImportarCumples({ lista }: { lista: Cumple[] }) {
             Archivo: <strong>{archivo.name}</strong>
             {hojas.length > 1 ? ` · ${hojas.length} hojas` : ''}
           </p>
-          {hojasDeMes.length >= 2 && (
+          {juntables.length >= 2 && (
             <label className="interruptor">
               <input type="checkbox" checked={juntar} onChange={(e) => setJuntar(e.target.checked)} />
-              <span>El Excel tiene una hoja por mes ({hojasDeMes.length} hojas). Importarlas todas juntas.</span>
+              <span>
+                {esWord
+                  ? `El documento tiene ${juntables.length} listas o tablas (${juntables.map((h) => h.nombre).join(', ')}). Importarlas todas juntas.`
+                  : `El Excel tiene una hoja por mes (${juntables.length} hojas). Importarlas todas juntas.`}
+              </span>
             </label>
           )}
           {!juntar && (

@@ -106,6 +106,12 @@ export function arreglarNombre(s: string) {
   return t.toLowerCase().replace(/(^|[\s'-])(\p{L})/gu, (_, a: string, b: string) => a + b.toUpperCase());
 }
 
+/** "Hna. María Gómez", "Hermano Luis" → sin el tratamiento (el banner usa el primer nombre). */
+export function sinTitulo(nombre: string) {
+  const sin = nombre.replace(/^(herman[oa]s?|hn[oa]s?|hmn[oa]|hno|hna)\.?\s+/i, '');
+  return sin.trim() ? sin : nombre;
+}
+
 function esHijo(t: string) {
   return /hij|nin|menor|bebe|kid|child/.test(normalizarNombre(t));
 }
@@ -114,7 +120,20 @@ function esHijo(t: string) {
 function mesDeTitulo(t: string): number | null {
   const s = sinTildes(t.toLowerCase()).replace(/[^a-z ]/g, '').trim();
   if (!s || s.length > 12 || s.includes(' ')) return null;
-  return numeroMes(s);
+  return mesExacto(s);
+}
+
+const NOMBRES_MES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+/**
+ * Solo el nombre del mes completo ("marzo", "setiembre") o su abreviatura de 3 letras ("mar").
+ * Así un nombre suelto como "Mario", "Marta" o "Julio César" no se toma por un título de mes.
+ */
+export function mesExacto(palabra: string): number | null {
+  const p = sinTildes(palabra.toLowerCase()).replace(/[^a-z]/g, '');
+  if (p === 'setiembre' || p === 'set' || p === 'sept') return 9;
+  const i = NOMBRES_MES.findIndex((m) => m === p || m.slice(0, 3) === p);
+  return i >= 0 ? i + 1 : null;
 }
 
 /** Mes según el nombre de la hoja ("Marzo", "03 - Marzo"), para listas con una hoja por mes. */
@@ -167,7 +186,7 @@ export function procesarCumples(hoja: Hoja, filaEncabezado: number, mapeo: Mapeo
     const val = (c: CampoCumple) => (mapeo[c] === undefined ? null : f[mapeo[c]!] ?? null);
     const txt = (c: CampoCumple) => texto(val(c)).replace(/\s+/g, ' ').trim();
 
-    const nombre = arreglarNombre([txt('nombre'), txt('apellido')].filter(Boolean).join(' '));
+    const nombre = sinTitulo(arreglarNombre([txt('nombre'), txt('apellido')].filter(Boolean).join(' ')));
     let fecha = mapeo.fecha !== undefined ? parsearCumple(val('fecha'), actual) : null;
     if (!fecha && (mapeo.dia !== undefined || mapeo.mes !== undefined)) {
       const celdaDia = val('dia');
