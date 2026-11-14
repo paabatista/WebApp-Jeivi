@@ -8,7 +8,7 @@
 import type { Hoja } from '../finanzas/importar/leerArchivo';
 import { sinTildes, type Celda } from '../finanzas/importar/normalizar';
 import { MESES } from './datos';
-import { mesExacto } from './importarDatos';
+import { mesExacto, parsearCumple } from './importarDatos';
 
 /* ---------- ZIP mínimo ---------- */
 
@@ -55,59 +55,167 @@ const decodificar = (s: string) =>
     e[0] === '#' ? String.fromCodePoint(e[1].toLowerCase() === 'x' ? parseInt(e.slice(2), 16) : Number(e.slice(1))) : ENTIDADES[e] ?? m,
   );
 
-/** Texto de un párrafo: tabuladores como " – " y saltos de línea como líneas aparte. */
-function textoParrafo(xml: string): string[] {
-  const partes: string[] = [];
-  const re = /<w:t(?:\s[^>]*)?>([^<]*)<\/w:t>|<w:tab\/>|<w:br(?:\s[^>]*)?\/>|<w:cr\/>/g;
-  let m: RegExpExecArray | null;
+/* ---------- Árbol del documento: párrafos y tablas (con tablas dentro de tablas) ---------- */
+
+interface Parrafo {
+  tipo: 'p';
+  lineas: string[];
+}
+interface Tabla {
+  tipo: 'tabla';
+  filas: Nodo[][][];
+}
+type Nodo = Parrafo | Tabla;
+
+function arbol(cuerpo: string): Nodo[] {
+  const raiz: Nodo[] = [];
+  const pila: { tabla: Tabla; padre: Nodo[] }[] = [];
+  let destino = raiz;
+  let lineas: string[] | null = null;
   let actual = '';
-  while ((m = re.exec(xml))) {
-    if (m[1] !== undefined) actual += decodificar(m[1]);
-    else if (m[0].startsWith('<w:tab')) actual += ' – ';
+  const re = /<w:tbl(?=[\s>])[^>]*>|<\/w:tbl>|<w:tr(?=[\s>])[^>]*>|<w:tc(?=[\s>])[^>]*>|<\/w:tc>|<w:p(?=[\s>])[^>]*>|<\/w:p>|<w:t(?=[\s>])[^>]*>([^<]*)<\/w:t>|<w:tab\/>|<w:br(?:\s[^>]*)?\/>|<w:cr\/>/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(cuerpo))) {
+    const t = m[0];
+    if (t.startsWith('<w:tbl')) {
+      const tabla: Tabla = { tipo: 'tabla', filas: [] };
+      destino.push(tabla);
+      pila.push({ tabla, padre: destino });
+    } else if (t === '</w:tbl>') {
+      const s = pila.pop();
+      if (s) destino = s.padre;
+    } else if (t.startsWith('<w:tr')) {
+      pila.at(-1)?.tabla.filas.push([]);
+    } else if (t.startsWith('<w:tc')) {
+      const fila = pila.at(-1)?.tabla.filas.at(-1);
+      if (fila) {
+        const celda: Nodo[] = [];
+        fila.push(celda);
+        destino = celda;
+      }
+    } else if (t === '</w:tc>') {
+      destino = pila.at(-1)?.padre ?? raiz;
+    } else if (t.startsWith('<w:p')) {
+      lineas = [];
+      actual = '';
+    } else if (t === '</w:p>') {
+      (lineas ??= []).push(actual);
+      destino.push({ tipo: 'p', lineas: lineas.map((l) => l.replace(/\s+/g, ' ').trim()) });
+      lineas = null;
+      actual = '';
+    } else if (m[1] !== undefined) actual += decodificar(m[1]);
+    else if (t.startsWith('<w:tab')) actual += ' – ';
     else {
-      partes.push(actual);
+      (lineas ??= []).push(actual);
       actual = '';
     }
   }
-  partes.push(actual);
-  return partes.map((t) => t.replace(/\s+/g, ' ').trim());
+  return raiz;
 }
 
-const parrafos = (xml: string) => xml.match(/<w:p[ >][\s\S]*?<\/w:p>/g) || [];
+const tieneTablas = (n: Nodo[]): boolean => n.some((x) => x.tipo === 'tabla');
+const esHoja = (t: Tabla) => t.filas.every((f) => f.every((c) => !tieneTablas(c)));
+const textoNodos = (n: Nodo[]): string =>
+  n
+    .map((x) => (x.tipo === 'p' ? x.lineas.filter(Boolean).join(' ') : x.filas.map((f) => f.map(textoNodos).join(' ')).join(' ')))
+    .filter(Boolean)
+    .join(' ');
+const filasDeTabla = (t: Tabla): Celda[][] => t.filas.map((f) => f.map(textoNodos));
 
-/** Separa el cuerpo en bloques de primer nivel: tablas y párrafos, en orden. */
-function bloques(xml: string): { tipo: 'tabla' | 'texto'; xml: string }[] {
-  const out: { tipo: 'tabla' | 'texto'; xml: string }[] = [];
-  const re = /<w:tbl>|<w:tbl\s[^>]*>|<\/w:tbl>/g;
-  let profundidad = 0;
-  let inicioTabla = 0;
-  let ultimo = 0;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(xml))) {
-    if (m[0] !== '</w:tbl>') {
-      if (profundidad === 0) {
-        if (m.index > ultimo) out.push({ tipo: 'texto', xml: xml.slice(ultimo, m.index) });
-        inicioTabla = m.index;
-      }
-      profundidad++;
-    } else if (profundidad > 0 && --profundidad === 0) {
-      ultimo = m.index + m[0].length;
-      out.push({ tipo: 'tabla', xml: xml.slice(inicioTabla, ultimo) });
+/* ---------- Formato calendario: cajitas con el calendario del mes y al lado la lista "día | nombre" ---------- */
+
+const DIA_SEMANA = /^(d|l|m|mi|x|j|v|s|do|lu|ma|mie|ju|vi|sa|dom|lun|mar|mie|jue|vie|sab)\.?$/;
+const esDia = (t: string) => /^\d{1,2}$/.test(t) && Number(t) >= 1 && Number(t) <= 31;
+
+/** Si la tabla es un calendario de un mes ("ENERO 26", fila D L M… y los números del mes), devuelve el mes. */
+function mesDeCalendario(t: Tabla): number | null {
+  const filas = filasDeTabla(t).map((f) => f.map((c) => sinTildes(String(c ?? '').toLowerCase()).trim()));
+  let mes: number | null = null;
+  for (const f of filas.slice(0, 2)) mes ??= mesDeLinea(f.filter(Boolean).join(' '));
+  if (!mes) return null;
+  const semana = filas.some((f) => f.filter((c) => DIA_SEMANA.test(c)).length >= 5);
+  const semanasConNumeros = filas.filter((f) => f.filter(esDia).length >= 5).length;
+  return semana || semanasConNumeros >= 4 ? mes : null;
+}
+
+type Ruta = { tabla: number; fila: number; celda: number }[];
+type Pieza =
+  | { tipo: 'mes'; mes: number; ruta: Ruta; orden: number; calendario: boolean }
+  | { tipo: 'persona'; nombre: string; dia: number; mes: number | null; anio: number | null; telefono: string; ruta: Ruta; orden: number };
+
+function piezas(nodos: Nodo[]): Pieza[] {
+  const out: Pieza[] = [];
+  let tablas = 0;
+  let orden = 0;
+  const persona = (texto: string[], ruta: Ruta) => {
+    const f = separarLinea(texto.join(' – '));
+    if (!f) return;
+    if (f.length === 1) {
+      const mes = mesDeLinea(f[0]);
+      if (mes) out.push({ tipo: 'mes', mes, ruta, orden: orden++, calendario: false });
+      return;
     }
-  }
-  if (ultimo < xml.length) out.push({ tipo: 'texto', xml: xml.slice(ultimo) });
+    const [nombre, fecha, telefono] = f;
+    if (!fecha) return;
+    const completa = esDia(fecha) ? null : parsearCumple(fecha);
+    if (!esDia(fecha) && !completa) return;
+    out.push({ tipo: 'persona', nombre, dia: completa ? completa.dia : Number(fecha), mes: completa?.mes ?? null, anio: completa?.anio ?? null, telefono, ruta, orden: orden++ });
+  };
+  const recorrer = (lista: Nodo[], ruta: Ruta) => {
+    for (const n of lista) {
+      if (n.tipo === 'p') {
+        n.lineas.forEach((l) => l && persona([l], ruta));
+        continue;
+      }
+      const id = tablas++;
+      const mes = esHoja(n) ? mesDeCalendario(n) : null;
+      if (mes) {
+        out.push({ tipo: 'mes', mes, ruta, orden: orden++, calendario: true });
+        continue;
+      }
+      n.filas.forEach((fila, i) => {
+        if (esHoja(n)) {
+          // Lista "día | nombre" (o "nombre | fecha"): una persona por fila.
+          const celdas = fila.map(textoNodos).filter(Boolean);
+          if (celdas.length) persona(celdas, [...ruta, { tabla: id, fila: i, celda: 0 }]);
+        } else fila.forEach((c, j) => recorrer(c, [...ruta, { tabla: id, fila: i, celda: j }]));
+      });
+    }
+  };
+  recorrer(nodos, []);
   return out;
 }
 
-function filasDeTabla(xml: string): Celda[][] {
-  return (xml.match(/<w:tr[ >][\s\S]*?<\/w:tr>/g) || []).map((tr) =>
-    (tr.match(/<w:tc[ >][\s\S]*?<\/w:tc>/g) || []).map((tc) =>
-      parrafos(tc)
-        .flatMap(textoParrafo)
-        .filter(Boolean)
-        .join(' '),
-    ),
-  );
+/** Mes de cada persona: el del calendario que está a su lado (misma fila de la tabla grande, la cajita más cercana);
+ * si no hay, el último título de mes que apareció antes. */
+function asignarMeses(lista: Pieza[]): { nombre: string; dia: number; mes: number; anio: number | null; telefono: string }[] {
+  const meses = lista.filter((p): p is Extract<Pieza, { tipo: 'mes' }> => p.tipo === 'mes');
+  const out: { nombre: string; dia: number; mes: number; anio: number | null; telefono: string }[] = [];
+  for (const p of lista) {
+    if (p.tipo !== 'persona') continue;
+    let mes = p.mes;
+    for (let nivel = p.ruta.length - 1; mes === null && nivel >= 0; nivel--) {
+      const r = p.ruta[nivel];
+      const vecinos = meses.filter((c) => c.calendario && c.ruta[nivel]?.tabla === r.tabla && c.ruta[nivel]?.fila === r.fila);
+      if (!vecinos.length) continue;
+      vecinos.sort((a, b) => Math.abs(a.ruta[nivel].celda - r.celda) - Math.abs(b.ruta[nivel].celda - r.celda) || Math.abs(a.orden - p.orden) - Math.abs(b.orden - p.orden));
+      mes = vecinos[0].mes;
+    }
+    if (mes === null) mes = meses.filter((c) => c.orden < p.orden).at(-1)?.mes ?? null;
+    if (mes !== null) out.push({ nombre: p.nombre, dia: p.dia, mes, anio: p.anio, telefono: p.telefono });
+  }
+  return out.sort((a, b) => a.mes - b.mes || a.dia - b.dia);
+}
+
+/** Todos los párrafos fuera de las tablas "de datos" (también los de tablas usadas solo para acomodar el texto). */
+function lineasSueltas(nodos: Nodo[], tablasHoja: Tabla[]): string[] {
+  const out: string[] = [];
+  for (const n of nodos) {
+    if (n.tipo === 'p') out.push(...n.lineas);
+    else if (esHoja(n)) tablasHoja.push(n);
+    else n.filas.forEach((f) => f.forEach((c) => out.push(...lineasSueltas(c, tablasHoja))));
+  }
+  return out;
 }
 
 /* ---------- Una línea de texto → [nombre, fecha, teléfono] ---------- */
@@ -120,13 +228,14 @@ const FECHAS = [
 ];
 const RELLENO = new Set(['cumpleanos', 'cumpleaneros', 'cumpleaneras', 'cumples', 'mes', 'de', 'del', 'los', 'las', 'en']);
 
-/** "MARZO", "Cumpleaños de marzo 2026:" → 3 (título que separa la lista por meses). */
+/** "MARZO", "ENERO 26", "Cumpleaños de marzo 2026:" → 3 (título que separa la lista por meses). */
 export function mesDeLinea(linea: string): number | null {
   const palabras = sinTildes(linea.toLowerCase())
     .replace(/[^a-z\s]/g, ' ')
     .split(/\s+/)
     .filter((p) => p && !RELLENO.has(p));
-  if (palabras.length !== 1 || /\d/.test(linea.replace(/\b\d{4}\b/, ''))) return null;
+  const sinAnio = linea.replace(/\b\d{4}\b/, '').replace(/\s+'?\d{2}\s*:?\s*$/, '');
+  if (palabras.length !== 1 || /\d/.test(sinAnio)) return null;
   return mesExacto(palabras[0]);
 }
 
@@ -171,23 +280,36 @@ export function separarLinea(linea: string): string[] | null {
   return [nombre, fecha, telefono];
 }
 
-/** Convierte el XML del documento en hojas: una por tabla y otra con la lista escrita como texto. */
+/** Convierte el XML del documento en hojas: el calendario completo, o una hoja por tabla y otra con la lista escrita. */
 export function hojasDeWord(xml: string): Hoja[] {
   const cuerpo = /<w:body>([\s\S]*)<\/w:body>/.exec(xml)?.[1] ?? xml;
-  const hojas: Hoja[] = [];
-  const lineas: Celda[][] = [];
-  let tablas = 0;
-  for (const b of bloques(cuerpo)) {
-    if (b.tipo === 'tabla') {
-      const filas = filasDeTabla(b.xml);
-      if (filas.some((f) => f.some((c) => c))) hojas.push({ nombre: `Tabla ${++tablas}`, filas });
-    } else {
-      for (const l of parrafos(b.xml).flatMap(textoParrafo)) {
-        const fila = separarLinea(l);
-        if (fila) lineas.push(fila);
-      }
+  const nodos = arbol(cuerpo);
+  const lista = piezas(nodos);
+  if (lista.some((p) => p.tipo === 'mes' && p.calendario)) {
+    const personas = asignarMeses(lista);
+    if (personas.length) {
+      return [
+        {
+          nombre: 'Calendario de cumpleaños',
+          filas: [
+            ['Nombre', 'Fecha de nacimiento', 'WhatsApp'],
+            ...personas.map((p) => [p.nombre, `${p.dia} de ${MESES[p.mes - 1].toLowerCase()}${p.anio ? ` de ${p.anio}` : ''}`, p.telefono]),
+          ],
+        },
+      ];
     }
   }
+  const hojas: Hoja[] = [];
+  const tablasHoja: Tabla[] = [];
+  const lineas: Celda[][] = [];
+  for (const l of lineasSueltas(nodos, tablasHoja)) {
+    const fila = separarLinea(l);
+    if (fila) lineas.push(fila);
+  }
+  tablasHoja.forEach((t, i) => {
+    const filas = filasDeTabla(t);
+    if (filas.some((f) => f.some((c) => c))) hojas.push({ nombre: `Tabla ${i + 1}`, filas });
+  });
   // El texto cuenta como lista si al menos 2 líneas traen fecha o día.
   if (lineas.filter((f) => f.length === 3 && f[1]).length >= 2) {
     hojas.push({ nombre: 'Lista escrita en el documento', filas: [['Nombre', 'Fecha de nacimiento', 'WhatsApp'], ...lineas] });

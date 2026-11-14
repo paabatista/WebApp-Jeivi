@@ -103,7 +103,10 @@ export function parsearCumple(c: Celda, actual = new Date().getFullYear()): Fech
 export function arreglarNombre(s: string) {
   const t = s.replace(/\s+/g, ' ').trim();
   if (!/[a-záéíóúñ]/i.test(t) || t !== t.toUpperCase()) return t;
-  return t.toLowerCase().replace(/(^|[\s'-])(\p{L})/gu, (_, a: string, b: string) => a + b.toUpperCase());
+  return t
+    .toLowerCase()
+    .replace(/(^|[\s'-])(\p{L})/gu, (_, a: string, b: string) => a + b.toUpperCase())
+    .replace(/^Ti([ao])\b/, 'Tí$1');
 }
 
 /** "Hna. María Gómez", "Hermano Luis" → sin el tratamiento (el banner usa el primer nombre). */

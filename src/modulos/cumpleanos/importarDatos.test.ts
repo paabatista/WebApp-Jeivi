@@ -66,6 +66,8 @@ describe('procesarCumples', () => {
   it('arreglarNombre solo cambia lo que está todo en mayúsculas', () => {
     expect(arreglarNombre('MARÍA DE LOS ÁNGELES')).toBe('María De Los Ángeles');
     expect(arreglarNombre('María de los Ángeles')).toBe('María de los Ángeles');
+    expect(arreglarNombre('TIA MARCELA')).toBe('Tía Marcela');
+    expect(arreglarNombre('TIO ANDRES')).toBe('Tío Andres');
   });
 });
 
@@ -93,5 +95,15 @@ describe('sinTitulo', () => {
     expect(sinTitulo('Hna. María Gómez')).toBe('María Gómez');
     expect(sinTitulo('Hermano Luis Mora')).toBe('Luis Mora');
     expect(sinTitulo('Hernán Pérez')).toBe('Hernán Pérez');
+  });
+});
+
+describe('nombreDeSaludo', () => {
+  it('usa el primer nombre, o el tratamiento con el nombre', async () => {
+    const { nombreDeSaludo } = await import('./datos');
+    expect(nombreDeSaludo('Ana Paula Ríos')).toBe('Ana');
+    expect(nombreDeSaludo('Tía Marcela')).toBe('Tía Marcela');
+    expect(nombreDeSaludo('Pastora Eliza')).toBe('Pastora Eliza');
+    expect(nombreDeSaludo('Pastor')).toBe('Pastor');
   });
 });

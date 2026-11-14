@@ -63,6 +63,13 @@ export function partirFecha(iso: string): { dia: number; mes: number; anio: numb
   return { anio: Number(m[1]), mes: Number(m[2]), dia: Number(m[3]) };
 }
 
+/** Cómo se le dice en el saludo: el primer nombre, o "Tía Marcela" / "Pastora Eliza" si lleva tratamiento. */
+export function nombreDeSaludo(nombre: string) {
+  const p = nombre.trim().split(/\s+/);
+  const tratamiento = /^(t[ií][oa]s?|pastor(a)?|pr|pra|abuel[oa]|diacono|di[aá]cono|diaconisa|evangelista|misionera?|ap[oó]stol)\.?$/i;
+  return p.length > 1 && tratamiento.test(p[0]) ? `${p[0]} ${p[1]}` : p[0] || nombre;
+}
+
 export function mensajeFelicitacion(c: Cumple, iglesia: string) {
-  return `🎉 ¡Feliz cumpleaños, ${c.nombre.split(' ')[0]}! 🎂\n\nQue el Señor te bendiga y te guarde; que haga resplandecer su rostro sobre ti. (Números 6:24-25)\n\nCon cariño, tu familia de ${iglesia}.`;
+  return `🎉 ¡Feliz cumpleaños, ${nombreDeSaludo(c.nombre)}! 🎂\n\nQue el Señor te bendiga y te guarde; que haga resplandecer su rostro sobre ti. (Números 6:24-25)\n\nCon cariño, tu familia de ${iglesia}.`;
 }

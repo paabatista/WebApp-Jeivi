@@ -70,6 +70,32 @@ describe('hojasDeWord', () => {
   });
 });
 
+describe('formato calendario', () => {
+  const tbl = (...filas: string[]) => `<w:tbl>${filas.join('')}</w:tbl>`;
+  const calendario = (mes: string) => tbl(tr(mes), tr('D', 'L', 'M', 'MI', 'J', 'V', 'S'), tr('', '', '', '', '', '1', '2'), tr('3', '4', '5', '6', '7', '8', '9'), tr('10', '11', '12', '13', '14', '15', '16'), tr('17', '18', '19', '20', '21', '22', '23'));
+  const celda = (contenido: string) => `<w:tc><w:tcPr/>${contenido}<w:p/></w:tc>`;
+  it('cada lista toma el mes del calendario que tiene al lado', () => {
+    // Fila de la tabla grande: [lista enero][calendario enero][espacio][calendario julio][lista julio]
+    const fila = (a: string, b: string, c: string, d: string) => `<w:tr>${celda(a)}${celda(b)}${celda('')}${celda(c)}${celda(d)}</w:tr>`;
+    const xml = doc(
+      tbl(
+        fila(tbl(tr('5', 'ANDRES'), tr('7', 'OMAIRA')), calendario('ENERO 26'), calendario('JULIO 26'), tbl(tr('16', 'PASTORA CARMEN'), tr('16', 'TIO ANDRES'))),
+        fila(tbl(tr('19', 'TIA MARCELA')), calendario('FEBRERO 26'), calendario('AGOSTO 26'), tbl(tr('3', 'KRISTEL'))),
+      ) + p('2026 CUMPLEAÑERO JEIVI'),
+    );
+    const hojas = hojasDeWord(xml);
+    expect(hojas).toHaveLength(1);
+    expect(hojas[0].filas.slice(1).map((f) => `${f[1]} ${f[0]}`)).toEqual([
+      '5 de enero ANDRES',
+      '7 de enero OMAIRA',
+      '19 de febrero TIA MARCELA',
+      '16 de julio PASTORA CARMEN',
+      '16 de julio TIO ANDRES',
+      '3 de agosto KRISTEL',
+    ]);
+  });
+});
+
 describe('leerWord', () => {
   it('abre un .docx de verdad', async () => {
     const hojas = await leerWord(docx(doc(`<w:tbl>${tr('Nombre', 'Cumpleaños')}${tr('Eva &amp; Leo Paz', '3 de abril')}</w:tbl>`)));
