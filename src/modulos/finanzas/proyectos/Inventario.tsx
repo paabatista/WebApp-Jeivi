@@ -182,7 +182,7 @@ function sumarDiasISO(iso: string, dias: number) {
 }
 
 function FormBien({ inicial, alTerminar }: { inicial?: Bien; alTerminar: () => void }) {
-  const { perfil, iglesia } = useSesion();
+  const { perfil } = useSesion();
   const [f, setF] = useState({
     nombre: inicial?.nombre || '',
     categoria: inicial?.categoria || CATEGORIAS_BIEN[0],
@@ -213,7 +213,7 @@ function FormBien({ inicial, alTerminar }: { inicial?: Bien; alTerminar: () => v
     if (!a) return;
     setOcupado(true);
     try {
-      setFoto(await guardarFoto(a, iglesia, 'jeivi/finanzas', { autor: perfil, titulo: `Inventario: ${f.nombre}` }));
+      setFoto(await guardarFoto(a, 'jeivi/finanzas', { autor: perfil, titulo: `Inventario: ${f.nombre}` }));
     } catch (err) {
       setError(explicarError(err));
     } finally {

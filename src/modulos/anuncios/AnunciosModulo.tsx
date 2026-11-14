@@ -178,7 +178,7 @@ function EditarAnuncio({ lista }: { lista: Anuncio[] }) {
 }
 
 function Editor({ inicial }: { inicial?: Anuncio }) {
-  const { perfil, iglesia } = useSesion();
+  const { perfil } = useSesion();
   const nav = useNavigate();
   const [titulo, setTitulo] = useState(inicial?.titulo || '');
   const [texto, setTexto] = useState(inicial?.texto || '');
@@ -198,7 +198,7 @@ function Editor({ inicial }: { inicial?: Anuncio }) {
     if (!f) return;
     setSubiendo(true);
     try {
-      setImagen(await guardarFoto(f, iglesia, 'jeivi/anuncios', { autor: perfil, titulo: `Imagen de anuncio: ${titulo}` }));
+      setImagen(await guardarFoto(f, 'jeivi/anuncios', { autor: perfil, titulo: `Imagen de anuncio: ${titulo}` }));
     } catch (err) {
       setError(explicarError(err));
     } finally {

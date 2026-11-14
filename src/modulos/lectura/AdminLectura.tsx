@@ -291,14 +291,13 @@ function Textos() {
 
 /* ---------- Banco de imágenes ---------- */
 function BancoImagenes() {
-  const { iglesia, perfil } = useSesion();
+  const { perfil } = useSesion();
   const { config } = useLectura();
   const [titulo, setTitulo] = useState('');
   const [url, setUrl] = useState('');
   const [subiendo, setSubiendo] = useState(false);
   const [error, setError] = useState('');
-  const cl = iglesia.cloudinary;
-  const puedeSubir = STORAGE_ACTIVO || !!(cl?.cloudName && cl.uploadPreset);
+  const puedeSubir = STORAGE_ACTIVO;
 
   const guardarLista = (imagenes: ImagenBanco[]) => guardarDoc(RUTA_CONFIG, { imagenes });
 
@@ -311,7 +310,7 @@ function BancoImagenes() {
     try {
       const nuevas: ImagenBanco[] = [];
       for (const f of archivos) {
-        const u = await guardarFoto(f, iglesia, 'jeivi/lectura', { autor: perfil, titulo: `Banco de imágenes: ${titulo || f.name}` });
+        const u = await guardarFoto(f, 'jeivi/lectura', { autor: perfil, titulo: `Banco de imágenes: ${titulo || f.name}` });
         nuevas.push({ id: id(), url: u, titulo: titulo.trim() || f.name.replace(/\.\w+$/, '') });
       }
       await guardarLista([...config.imagenes, ...nuevas]);
@@ -364,7 +363,7 @@ function BancoImagenes() {
           </label>
         ) : (
           <div className="aviso">
-            Para subir fotos desde el equipo hay que activar Firebase Storage (ver PUBLICAR.md) o Cloudinary. Mientras tanto puedes
+            Para subir fotos desde el equipo hay que activar Firebase Storage (ver STORAGE.md). Mientras tanto puedes
             pegar el enlace de una imagen.
           </div>
         )}

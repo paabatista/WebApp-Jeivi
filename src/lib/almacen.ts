@@ -9,7 +9,7 @@
 import { getDownloadURL, getStorage, ref, uploadBytes } from 'firebase/storage';
 import { app, firebaseConfigurado, IGLESIA_ID } from './firebase';
 import { guardarDoc } from './datos';
-import { reducirImagen } from './cloudinary';
+import { reducirImagen } from './imagenes';
 
 export const STORAGE_ACTIVO = firebaseConfigurado && import.meta.env.VITE_STORAGE_ACTIVO === '1';
 
@@ -141,22 +141,17 @@ export async function guardarArchivo(blob: Blob, o: OpcionesArchivo): Promise<Ar
 
 /**
  * Foto para un registro (cumpleaños, anuncio, evento, logo). Orden de preferencia:
- * Firebase Storage → Cloudinary → reducida dentro del registro.
+ * Firebase Storage; sin Storage (p. ej. modo demo) se guarda reducida dentro del registro.
  */
 export async function guardarImagen(
   archivo: File,
-  opciones: { modulo: string; titulo: string; autor?: Autor | null; publicoToken?: string; cloudinary?: { cloudName: string; uploadPreset: string } },
+  opciones: { modulo: string; titulo: string; autor?: Autor | null; publicoToken?: string },
 ): Promise<string> {
   if (!archivo.type.startsWith('image/')) throw new Error('El archivo debe ser una imagen.');
   if (STORAGE_ACTIVO) {
     const reducida = await reducirImagen(archivo, 1600, 0.85);
     if (opciones.publicoToken || !opciones.autor) return (await subirAStorage(reducida, opciones.modulo, opciones.publicoToken)).url;
     return (await guardarArchivo(reducida, { tipo: 'foto', modulo: opciones.modulo, titulo: opciones.titulo, nombre: archivo.name, autor: opciones.autor })).url;
-  }
-  const cl = opciones.cloudinary;
-  if (cl?.cloudName && cl.uploadPreset) {
-    const { subirACloudinary } = await import('./cloudinary');
-    return subirACloudinary(archivo, cl.cloudName, cl.uploadPreset, `jeivi/${opciones.modulo}`);
   }
   return blobADataUrl(await reducirImagen(archivo, 520, 0.8));
 }

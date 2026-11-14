@@ -55,8 +55,7 @@ Después de publicar, sigue los pasos manuales de [SEGURIDAD.md](SEGURIDAD.md) (
 - Prueba: `https://TU-APP.vercel.app/api/cron/lectura-diaria?prueba=tu@correo.com` con el encabezado `Authorization: Bearer TU_CRON_SECRET` (ver README).
 
 ## 5. Imágenes (opcional)
-Sin Cloudinary las fotos se guardan reducidas dentro de la base de datos (suficiente para empezar).
-Para fotos en alta calidad: cuenta gratis en https://cloudinary.com → *Settings → Upload → Upload presets → Add* (modo **Unsigned**) → pon *cloud name* y *preset* en Jeivi → Configuración.
+Las fotos se guardan en Firebase Storage (ver [STORAGE.md](STORAGE.md)). Sin Storage se guardan reducidas dentro de la base de datos.
 
 ## 6. Primeros pasos dentro de Jeivi
 1. **Lectura → Administrar**: guarda los ciclos (o deja los automáticos).

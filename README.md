@@ -3,7 +3,7 @@
 Plataforma modular para la gestión de la iglesia (estilo Odoo): un lanzador de "apps" donde se van sumando módulos.
 Hecha para **Ministerio Jesucristo Imperio de Vida**, preparada para que más adelante la usen otras iglesias.
 
-**Stack:** React + Vite + TypeScript · Firebase Authentication + Firestore · Vercel (hosting, funciones y cron) · Cloudinary (imágenes, plan gratis).
+**Stack:** React + Vite + TypeScript · Firebase Authentication + Firestore · Vercel (hosting, funciones y cron) · Firebase Storage (fotos, banners y comprobantes).
 
 ## Módulos
 
@@ -16,7 +16,7 @@ Hecha para **Ministerio Jesucristo Imperio de Vida**, preparada para que más ad
 | Anuncios | ✅ | Tablero informativo, anuncios con imagen y vigencia, banner, link público del tablero, suscripción a avisos y envío por correo |
 | Solicitudes | ✅ | Oración, visitas, consejería… por link público; bandeja con estados, responsable, notas de seguimiento; confidenciales solo para pastores |
 | Historial | ✅ | Quién hizo qué y cuándo en todos los módulos (antes → después), restaurar lo borrado, galería de banners, fotos y comprobantes |
-| Usuarios / Configuración | ✅ | Aprobar cuentas y niveles · nombre, colores, logo, módulos, Cloudinary |
+| Usuarios / Configuración | ✅ | Aprobar cuentas y niveles · nombre, colores, logo, módulos |
 
 ### Quién usa Jeivi
 
@@ -96,8 +96,8 @@ Prueba manual (te llega solo a ti):
 curl -H "Authorization: Bearer TU_CRON_SECRET" "https://TU-APP.vercel.app/api/cron/lectura-diaria?prueba=tu@correo.com"
 ```
 
-### 6. Imágenes (Cloudinary)
-Crea cuenta gratis en https://cloudinary.com → *Settings → Upload → Upload presets → Add* → modo **Unsigned**. Copia el *cloud name* y el nombre del preset en Jeivi → Configuración → Imágenes. Luego los pastores suben fotos al banco desde *Lectura Bíblica → Administrar*.
+### 6. Imágenes
+Las fotos (banco de imágenes, logo, cumpleaños, anuncios…) se guardan en **Firebase Storage**: ver [STORAGE.md](STORAGE.md). Los pastores suben fotos al banco desde *Lectura Bíblica → Administrar*.
 
 ## Cómo funciona la lectura
 

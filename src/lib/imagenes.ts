@@ -1,7 +1,4 @@
-/**
- * Subida de imágenes a Cloudinary (plan gratis) con un "upload preset" sin firma.
- * Se configura en Configuración → Imágenes (cloud name + upload preset).
- */
+/** Reduce una foto (lado mayor y calidad JPEG) antes de guardarla. */
 export async function reducirImagen(archivo: File, maxLado = 2000, calidad = 0.85): Promise<Blob> {
   const url = URL.createObjectURL(archivo);
   try {
@@ -20,16 +17,4 @@ export async function reducirImagen(archivo: File, maxLado = 2000, calidad = 0.8
   } finally {
     URL.revokeObjectURL(url);
   }
-}
-
-export async function subirACloudinary(archivo: File, cloudName: string, uploadPreset: string, carpeta = 'jeivi'): Promise<string> {
-  const blob = await reducirImagen(archivo);
-  const form = new FormData();
-  form.append('file', blob, archivo.name.replace(/\.\w+$/, '.jpg'));
-  form.append('upload_preset', uploadPreset);
-  form.append('folder', carpeta);
-  const r = await fetch(`https://api.cloudinary.com/v1_1/${encodeURIComponent(cloudName)}/image/upload`, { method: 'POST', body: form });
-  const j = await r.json();
-  if (!r.ok) throw new Error(j?.error?.message || 'Error al subir a Cloudinary');
-  return j.secure_url as string;
 }

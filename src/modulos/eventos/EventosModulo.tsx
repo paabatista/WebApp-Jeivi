@@ -204,7 +204,7 @@ function EditarEvento({ lista }: { lista: Evento[] }) {
 }
 
 function Editor({ inicial }: { inicial?: Evento }) {
-  const { perfil, iglesia } = useSesion();
+  const { perfil } = useSesion();
   const equipo = useEquipo();
   const nav = useNavigate();
   const [params] = useSearchParams();
@@ -235,7 +235,7 @@ function Editor({ inicial }: { inicial?: Evento }) {
     if (!file) return;
     setSubiendo(true);
     try {
-      set('imagen', await guardarFoto(file, iglesia, 'jeivi/eventos', { autor: perfil, titulo: `Imagen de evento: ${f.titulo}` }));
+      set('imagen', await guardarFoto(file, 'jeivi/eventos', { autor: perfil, titulo: `Imagen de evento: ${f.titulo}` }));
     } catch (err) {
       setError(explicarError(err));
     } finally {

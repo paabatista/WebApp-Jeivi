@@ -4,7 +4,6 @@ import { ImagePlus, Plus, Trash2 } from 'lucide-react';
 import { guardarDoc } from '../../lib/datos';
 import { nuevoId, type Enlace } from '../../lib/enlaces';
 import { guardarFoto } from '../../lib/fotos';
-import { useSesion } from '../../lib/sesion';
 import { hoyISO } from '../../lib/fechas';
 import { RUTA_CUMPLES, partirFecha, textoFecha, type Cumple } from './datos';
 import { limpiarTelefono } from '../lectura/suscriptores';
@@ -66,7 +65,6 @@ function CampoPersona({ p, titulo, cambiar, quitar }: { p: Persona; titulo: stri
 
 /** Formulario público de cumpleaños (se abre con el link que comparte un diácono). */
 export function RegistroCumple({ enlace }: { enlace: Enlace }) {
-  const { iglesia } = useSesion();
   const [titular, setTitular] = useState<Persona>(vacia());
   const [hijos, setHijos] = useState<Persona[]>([]);
   const [telefono, setTelefono] = useState('');
@@ -87,7 +85,7 @@ export function RegistroCumple({ enlace }: { enlace: Enlace }) {
     try {
       for (const p of personas) {
         const f = partirFecha(p.fecha)!;
-        const foto = p.archivo && autoriza ? await guardarFoto(p.archivo, iglesia, 'jeivi/cumpleanos', { publicoToken: enlace.id }) : '';
+        const foto = p.archivo && autoriza ? await guardarFoto(p.archivo, 'jeivi/cumpleanos', { publicoToken: enlace.id }) : '';
         const doc: Omit<Cumple, 'id'> = {
           nombre: p.nombre.trim(),
           dia: f.dia,

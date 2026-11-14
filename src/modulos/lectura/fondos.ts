@@ -1,7 +1,7 @@
 /**
  * Banco de fondos incluido en la app. Se dibujan con código (canvas), así que no pesan,
  * no dependen de internet y no tienen problemas de derechos de autor.
- * El admin puede sumar fotos propias al banco (Cloudinary) y cada hermano puede usar una foto de su celular.
+ * El admin puede sumar fotos propias al banco (Firebase Storage) y cada hermano puede usar una foto de su celular.
  */
 
 export interface Fondo {

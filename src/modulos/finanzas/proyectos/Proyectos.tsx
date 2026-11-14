@@ -119,7 +119,7 @@ export function Proyectos({ d }: { d: DatosFin }) {
 /* ================= Editor ================= */
 
 function EditorProyecto({ inicial, alTerminar }: { inicial?: Proyecto; alTerminar: (id?: string) => void }) {
-  const { perfil, iglesia } = useSesion();
+  const { perfil } = useSesion();
   const [f, setF] = useState({
     nombre: inicial?.nombre || '',
     descripcion: inicial?.descripcion || '',
@@ -140,7 +140,7 @@ function EditorProyecto({ inicial, alTerminar }: { inicial?: Proyecto; alTermina
     if (!archivo) return;
     setSubiendo(true);
     try {
-      set('imagen', await guardarFoto(archivo, iglesia, 'jeivi/finanzas', { autor: perfil, titulo: `Proyecto: ${f.nombre}` }));
+      set('imagen', await guardarFoto(archivo, 'jeivi/finanzas', { autor: perfil, titulo: `Proyecto: ${f.nombre}` }));
     } catch (err) {
       setError(explicarError(err));
     } finally {

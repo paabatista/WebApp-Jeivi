@@ -24,7 +24,8 @@ export function Configuracion() {
   async function guardar() {
     setError('');
     try {
-      await guardarDoc(`iglesias/${IGLESIA_ID}`, { ...f });
+      const { cloudinary: _viejo, ...datos } = f as typeof f & { cloudinary?: unknown };
+      await guardarDoc(`iglesias/${IGLESIA_ID}`, datos, false);
       setMsg('Configuración guardada.');
       setTimeout(() => setMsg(''), 2500);
     } catch (err) {
@@ -38,7 +39,7 @@ export function Configuracion() {
     if (!archivo) return;
     setSubiendo(true);
     try {
-      set('logoUrl', await guardarFoto(archivo, f, 'jeivi/marca', { autor: perfil, titulo: 'Logo de la iglesia' }));
+      set('logoUrl', await guardarFoto(archivo, 'jeivi/marca', { autor: perfil, titulo: 'Logo de la iglesia' }));
     } catch (err) {
       setError(explicarError(err));
     } finally {
@@ -129,30 +130,6 @@ export function Configuracion() {
                 </span>
               </label>
             ))}
-          </div>
-        </section>
-
-        <section className="tarjeta">
-          <h2>Imágenes (Cloudinary)</h2>
-          <p className="suave">
-            Para subir fotos al banco de imágenes y el logo. Crea una cuenta gratis en cloudinary.com, ve a Settings → Upload →
-            Upload presets, crea uno en modo <strong>Unsigned</strong> y copia aquí su nombre.
-          </p>
-          <div className="fila">
-            <label>
-              Cloud name
-              <input
-                value={f.cloudinary?.cloudName || ''}
-                onChange={(e) => set('cloudinary', { cloudName: e.target.value.trim(), uploadPreset: f.cloudinary?.uploadPreset || '' })}
-              />
-            </label>
-            <label>
-              Upload preset (unsigned)
-              <input
-                value={f.cloudinary?.uploadPreset || ''}
-                onChange={(e) => set('cloudinary', { cloudName: f.cloudinary?.cloudName || '', uploadPreset: e.target.value.trim() })}
-              />
-            </label>
           </div>
         </section>
 

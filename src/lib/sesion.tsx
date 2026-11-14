@@ -41,7 +41,6 @@ export interface Iglesia {
   sitioWeb?: string;
   /** Módulos visibles en el lanzador. */
   modulosActivos: string[];
-  cloudinary?: { cloudName: string; uploadPreset: string };
   /** Horas sin actividad tras las que se cierra la sesión (1 o 2). */
   inactividadHoras?: 1 | 2;
 }
