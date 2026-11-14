@@ -10,7 +10,7 @@ Hecha para **Ministerio Jesucristo Imperio de Vida**, preparada para que más ad
 | Módulo | Estado | Qué hace |
 |---|---|---|
 | Lectura Bíblica | ✅ | Plan de 6 meses, banner para WhatsApp, link público para ver la lectura y suscribirse, correo diario |
-| Cumpleaños | ✅ | Próximos, calendario, registros, banner con foto, link público de registro (persona + hijos + foto), **encargado del mes tipo ticket** (la pastora asigna, cada banner enviado marca al cumpleañero), exportar |
+| Cumpleaños | ✅ | Próximos, calendario, registros, banner con foto, link público de registro (persona + hijos + foto), **encargado del mes tipo ticket** (la pastora asigna, cada banner enviado marca al cumpleañero), **importar la lista desde Excel** (al subirla actualizada solo cambia lo que cambió, sin duplicar), exportar a Excel |
 | Finanzas | ✅ | Aportes de los diáconos (luz, alquiler, mantenimiento…), gastos con campos libres, estado de cuenta, **los diáconos reportan sus pagos con comprobante obligatorio** (un pastor confirma o rechaza), **importar los Excel que ya usan** (.xlsx, .xls, .ods o .csv; primero pregunta si van a Finanzas, a un Proyecto o al Inventario, sin duplicar) y descargar |
 | Eventos | ✅ | Próximos, calendario mensual, responsables, tareas, banner, link de inscripción con cupo y lista de inscritos |
 | Anuncios | ✅ | Tablero informativo, anuncios con imagen y vigencia, banner, link público del tablero, suscripción a avisos y envío por correo |

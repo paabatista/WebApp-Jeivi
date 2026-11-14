@@ -15,7 +15,7 @@ type Columna = { header: string; key: string; width: number; dinero?: boolean };
 export const COLUMNA_ID = 'ID Jeivi';
 const MORADO = 'FF4A2C6D';
 
-async function nuevoLibro() {
+export async function nuevoLibro() {
   const { default: ExcelJS } = await import('exceljs');
   const libro = new ExcelJS.Workbook();
   libro.creator = 'Jeivi';
@@ -34,7 +34,7 @@ async function nuevoLibro() {
   return { libro, hoja };
 }
 
-async function descargar(libro: { xlsx: { writeBuffer: () => Promise<ArrayBuffer> } }, nombre: string) {
+export async function descargar(libro: { xlsx: { writeBuffer: () => Promise<ArrayBuffer> } }, nombre: string) {
   const buffer = await libro.xlsx.writeBuffer();
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));

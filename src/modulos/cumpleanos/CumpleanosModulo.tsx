@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { explicarError } from '../../lib/errores';
 import { Link, Navigate, Route, Routes, useNavigate, useSearchParams } from 'react-router-dom';
-import { Image as ImageIcon, MessageCircle, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Download, FileSpreadsheet, Image as ImageIcon, MessageCircle, Pencil, Plus, Trash2 } from 'lucide-react';
 import { Layout } from '../../core/Layout';
 import { Cargando } from '../../core/Cargando';
 import { GestorEnlaces } from '../../core/GestorEnlaces';
@@ -14,7 +14,8 @@ import { useSesion } from '../../lib/sesion';
 import { limpiarTelefono, numeroWhatsApp } from '../lectura/suscriptores';
 import { BannerCumple } from './BannerCumple';
 import { AvisoEncargo, Encargos, marcarFelicitado, useEncargos } from './Encargos';
-import { MESES, RUTA_CUMPLES, diasParaCumple, edadQueCumple, mensajeFelicitacion, textoFecha, type Cumple } from './datos';
+import { ImportarCumples, exportarCumples } from './ImportarCumples';
+import { MESES, ORIGEN_CUMPLE, RUTA_CUMPLES, diasParaCumple, edadQueCumple, mensajeFelicitacion, textoFecha, type Cumple } from './datos';
 
 const modulo = moduloPorId('cumpleanos')!;
 
@@ -45,6 +46,7 @@ export function CumpleanosModulo() {
           <Route index element={<Proximos lista={lista} />} />
           <Route path="calendario" element={<Calendario lista={lista} />} />
           <Route path="registros" element={<Registros lista={lista} />} />
+          <Route path="importar" element={<ImportarCumples lista={lista} />} />
           <Route path="banner" element={<PaginaBanner lista={lista} />} />
           <Route path="encargados" element={<Encargos lista={lista} />} />
           <Route
@@ -132,6 +134,9 @@ function Proximos({ lista }: { lista: Cumple[] }) {
           <Link className="boton" to="/m/cumpleanos/registros">
             Agregar manualmente
           </Link>
+          <Link className="boton" to="/m/cumpleanos/importar">
+            <FileSpreadsheet size={16} /> Importar Excel
+          </Link>
         </div>
       </section>
     );
@@ -194,8 +199,6 @@ function Calendario({ lista }: { lista: Cumple[] }) {
     </div>
   );
 }
-
-const pad = (n: number) => String(n).padStart(2, '0');
 
 function FormCumple({ inicial, alTerminar }: { inicial?: Cumple; alTerminar: () => void }) {
   const { iglesia, perfil } = useSesion();
@@ -323,17 +326,6 @@ function Registros({ lista }: { lista: Cumple[] }) {
     .filter((c) => `${c.nombre} ${c.familia}`.toLowerCase().includes(filtro.toLowerCase()))
     .sort((a, b) => a.mes - b.mes || a.dia - b.dia);
 
-  function exportarCSV() {
-    const filas = [['Nombre', 'Fecha', 'Año', 'Tipo', 'Familia', 'WhatsApp', 'Registrado por']];
-    visibles.forEach((c) =>
-      filas.push([c.nombre, `${pad(c.dia)}/${pad(c.mes)}`, c.anio ? String(c.anio) : '', c.parentesco === 'hijo' ? 'Hijo/a' : 'Adulto', c.familia || '', c.telefono || '', c.origen === 'link' ? 'Link' : 'Diácono']),
-    );
-    const csv = '﻿' + filas.map((f) => f.map((v) => `"${v.replace(/"/g, '""')}"`).join(';')).join('\r\n');
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-    a.download = 'cumpleanos.csv';
-    a.click();
-  }
 
   if (editando) return <FormCumple inicial={editando === 'nuevo' ? undefined : editando} alTerminar={() => setEditando(null)} />;
 
@@ -345,8 +337,11 @@ function Registros({ lista }: { lista: Cumple[] }) {
           <p className="suave">{lista.length} personas</p>
         </div>
         <div className="acciones">
-          <button className="boton" onClick={exportarCSV}>
-            Exportar a Excel
+          <Link className="boton" to="/m/cumpleanos/importar">
+            <FileSpreadsheet size={16} /> Importar Excel
+          </Link>
+          <button className="boton" onClick={() => exportarCumples(visibles)}>
+            <Download size={16} /> Descargar Excel
           </button>
           <button className="boton primario" onClick={() => setEditando('nuevo')}>
             <Plus size={16} /> Agregar
@@ -386,7 +381,7 @@ function Registros({ lista }: { lista: Cumple[] }) {
                 </td>
                 <td>{c.familia || '—'}</td>
                 <td>{c.telefono || '—'}</td>
-                <td>{c.origen === 'link' ? 'Link' : 'Diácono'}</td>
+                <td>{ORIGEN_CUMPLE[c.origen] || '—'}</td>
                 <td className="acciones-fila">
                   <button className="icono-boton" title="Editar" onClick={() => setEditando(c)}>
                     <Pencil size={15} />

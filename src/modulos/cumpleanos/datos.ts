@@ -15,11 +15,15 @@ export interface Cumple {
   /** Id que agrupa al titular con sus hijos. */
   grupo?: string;
   parentesco: 'titular' | 'hijo';
-  origen: 'link' | 'manual';
+  origen: 'link' | 'manual' | 'excel';
   enlace?: string;
   autorizaFoto: boolean;
   creado: string;
+  /** Si vino de un Excel: de cuál (al subirlo de nuevo, se actualiza en vez de duplicar). */
+  importacion?: { archivo: string; hoja: string; fecha: string };
 }
+
+export const ORIGEN_CUMPLE: Record<Cumple['origen'], string> = { link: 'Link', manual: 'Diácono', excel: 'Excel' };
 
 export const RUTA_CUMPLES = `iglesias/${IGLESIA_ID}/cumpleanos`;
 
