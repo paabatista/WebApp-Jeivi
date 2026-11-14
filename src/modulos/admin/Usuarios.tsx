@@ -14,7 +14,8 @@ const modulo = moduloPorId('usuarios')!;
 const DESCRIPCION_ROL: Record<Rol, string> = {
   superadmin: 'Todo, incluida la configuración de la app. Solo se asigna desde la consola de Firebase y no se puede quitar ni borrar desde Jeivi.',
   pastor: 'Administra usuarios, invitaciones, finanzas y contenidos. No cambia la configuración de la app.',
-  diacono: 'Entra a los módulos, edita cosas básicas, genera banners y links de registro, y ve su estado de cuenta.',
+  diacono:
+    'Entra a los módulos, edita cosas básicas y genera banners y links. En Finanzas ve su cuenta, el resumen (solo totales) y los proyectos sin editar; si tiene marcado “Lleva finanzas”, también importa, descarga y registra todo.',
   lider: 'Solo Lectura Bíblica, Cumpleaños, Solicitudes y Anuncios (banners, links y registros). No ve Finanzas ni Eventos.',
   pendiente: 'Sin acceso: no ve nada. Sirve para bloquear a alguien sin borrarlo.',
 };
@@ -168,6 +169,15 @@ export function Usuarios() {
     }
   }
 
+  async function cambiarEncargado(u: Perfil, encargadoFinanzas: boolean) {
+    setError('');
+    try {
+      await guardarDoc(`users/${u.uid}`, { encargadoFinanzas });
+    } catch {
+      setError('No tienes permiso para hacer ese cambio.');
+    }
+  }
+
   async function eliminar(u: Perfil) {
     if (!confirm(`¿Eliminar a ${u.nombre} (${u.email})?\n\nPerderá el acceso a Jeivi. Sus registros de finanzas se conservan.`)) return;
     setError('');
@@ -247,6 +257,7 @@ export function Usuarios() {
                   <th>WhatsApp</th>
                   <th>Correo diario</th>
                   <th>Nivel</th>
+                  <th title="Diáconos que llevan las finanzas: importan, descargan y registran cargos, aportes, gastos y proyectos">Lleva finanzas</th>
                   <th />
                 </tr>
               </thead>
@@ -282,6 +293,18 @@ export function Usuarios() {
                       )}
                     </td>
                     <td>
+                      {u.rol === 'diacono' ? (
+                        <label className="check-tabla" title="Puede importar y descargar Excel, y registrar cargos, aportes, gastos, proyectos e inventario">
+                          <input type="checkbox" checked={!!u.encargadoFinanzas} disabled={!editable(u)} onChange={(e) => cambiarEncargado(u, e.target.checked)} />
+                          {u.encargadoFinanzas ? 'Sí' : 'No'}
+                        </label>
+                      ) : NIVEL[u.rol] >= NIVEL.pastor ? (
+                        <span className="suave pequeno">Sí (por su nivel)</span>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
+                    <td>
                       {borrable(u) && (
                         <button className="icono-boton peligro" title="Eliminar usuario" onClick={() => eliminar(u)}>
                           <Trash2 size={15} />
@@ -292,7 +315,7 @@ export function Usuarios() {
                 ))}
                 {!lista.length && (
                   <tr>
-                    <td colSpan={6} className="suave">
+                    <td colSpan={7} className="suave">
                       No hay usuarios que coincidan.
                     </td>
                   </tr>

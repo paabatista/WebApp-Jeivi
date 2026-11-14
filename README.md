@@ -26,13 +26,16 @@ Solo el **equipo** tiene usuario, y **solo por invitación** (Usuarios → Invit
 |---|---|
 | **Super admin** | Todo, incluida la configuración de la app |
 | **Pastor (admin)** | Usuarios, finanzas completas, ciclos de lectura, imágenes. No toca la configuración de la app |
-| **Diácono** | Entra a los módulos, edita lo básico, crea banners y **links de registro**, ve **su estado de cuenta** |
+| **Diácono** | Entra a los módulos, edita lo básico, crea banners y **links de registro**. En Finanzas: **su cuenta**, el **resumen con totales** (sin nombres) y los **proyectos sin editar** |
+| **Diácono con “Lleva finanzas”** | Lo que marque la pastora en *Usuarios*: además importa y descarga Excel y registra cargos, aportes, gastos, proyectos e inventario |
 | **Líder** | Solo **Lectura Bíblica, Cumpleaños, Solicitudes y Anuncios** (banners, links y registros). No ve Finanzas ni Eventos |
 | **Sin acceso** (`pendiente`) | Bloqueado: no ve nada |
 
 La **congregación no tiene usuario**. Un diácono genera un **link** desde el módulo (Lectura, Cumpleaños, Anuncios, Solicitudes, o dentro de cada Evento) y lo comparte por WhatsApp. Quien lo abre solo ve ese formulario: no puede ver ni modificar ningún dato. Los links se pueden desactivar en cualquier momento.
 
 ### Finanzas: aportes de los diáconos
+
+Solo los pastores y los diáconos marcados con **“Lleva finanzas”** (en *Usuarios*) administran Finanzas. Los demás diáconos ven su cuenta, el resumen con totales de la iglesia (calculado por `/api/finanzas-resumen`, sin decir quién debe) y los proyectos sin poder editar.
 
 1. **Conceptos:** Luz, Agua, Alquiler, Mantenimiento… cada uno con *campos libres* para sus gastos (n.º de factura, kWh, vencimiento…).
 2. **Cargos:** lo que le toca a cada diácono. Dos formas: *repartir un recibo* (ej. luz $100 entre 4 = $25 c/u, y opcionalmente se registra como gasto) o *monto fijo* por diácono.

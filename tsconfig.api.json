@@ -11,5 +11,5 @@
     "composite": true,
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.api.tsbuildinfo"
   },
-  "include": ["api", "src/modulos/lectura/plan.ts", "src/modulos/lectura/calendario.ts", "src/lib/fechas.ts"]
+  "include": ["api", "src/modulos/lectura/plan.ts", "src/modulos/lectura/calendario.ts", "src/lib/fechas.ts", "src/modulos/finanzas/totales.ts"]
 }

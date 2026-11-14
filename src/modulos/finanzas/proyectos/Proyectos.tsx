@@ -9,6 +9,7 @@ import { formatoCorto, hoyISO } from '../../../lib/fechas';
 import { guardarFoto } from '../../../lib/fotos';
 import { guardarComprobante } from '../../../lib/almacen';
 import { useSesion } from '../../../lib/sesion';
+import { useAdminFinanzas } from '../permisos';
 import { RUTA_CONCEPTOS, dinero, redondear, type Comprobante, type Concepto, type Pago } from '../datos';
 import {
   CATEGORIAS_PROYECTO,
@@ -64,6 +65,7 @@ function Progreso({ valor, max, etiqueta }: { valor: number; max: number; etique
 
 export function Proyectos({ d }: { d: DatosFin }) {
   const datos = useProyectos();
+  const editar = useAdminFinanzas();
   const [nuevo, setNuevo] = useState(false);
   const [verCerrados, setVerCerrados] = useState(false);
   if (!datos) return <Cargando />;
@@ -97,9 +99,11 @@ export function Proyectos({ d }: { d: DatosFin }) {
           <h2>Proyectos e inversiones</h2>
           <p className="suave">Compras grandes y mejoras (ej. la PC para los directos). No cuentan como gastos corrientes.</p>
         </div>
-        <button className="boton primario" onClick={() => setNuevo(true)}>
-          <Plus size={16} /> Nuevo proyecto
-        </button>
+        {editar && (
+          <button className="boton primario" onClick={() => setNuevo(true)}>
+            <Plus size={16} /> Nuevo proyecto
+          </button>
+        )}
       </div>
       {abiertos.length ? <div className="rejilla-anuncios">{abiertos.map(tarjeta)}</div> : <p className="tarjeta suave">No hay proyectos en curso.</p>}
       {cerrados.length > 0 && (
@@ -241,6 +245,7 @@ export function DetalleProyecto({ d }: { d: DatosFin }) {
   const datos = useProyectos();
   const nav = useNavigate();
   const { perfil, puede } = useSesion();
+  const editar = useAdminFinanzas();
   const [editando, setEditando] = useState(false);
   const [error, setError] = useState('');
   const p = datos?.proyectos.find((x) => x.id === id);
@@ -302,12 +307,16 @@ export function DetalleProyecto({ d }: { d: DatosFin }) {
             </p>
           </div>
           <div className="acciones">
-            <button className="boton" onClick={pedirAporte} title="Asignar una cuota a los diáconos para este proyecto">
-              <Users size={16} /> Pedir aporte a diáconos
-            </button>
-            <button className="boton" onClick={() => setEditando(true)}>
-              <Pencil size={16} /> Editar
-            </button>
+            {editar && (
+              <button className="boton" onClick={pedirAporte} title="Asignar una cuota a los diáconos para este proyecto">
+                <Users size={16} /> Pedir aporte a diáconos
+              </button>
+            )}
+            {editar && (
+              <button className="boton" onClick={() => setEditando(true)}>
+                <Pencil size={16} /> Editar
+              </button>
+            )}
             {puede('superadmin') && (
               <button className="icono-boton peligro" title="Eliminar proyecto" onClick={borrarProyecto}>
                 <Trash2 size={16} />
@@ -354,7 +363,8 @@ export function DetalleProyecto({ d }: { d: DatosFin }) {
 /* ================= Compras ================= */
 
 function Compras({ proyecto, compras }: { proyecto: Proyecto; compras: MovProyecto[] }) {
-  const { perfil, puede } = useSesion();
+  const { perfil } = useSesion();
+  const editar = useAdminFinanzas();
   const [descripcion, setDescripcion] = useState('');
   const [cantidad, setCantidad] = useState('1');
   const [estimado, setEstimado] = useState('');
@@ -430,9 +440,11 @@ function Compras({ proyecto, compras }: { proyecto: Proyecto; compras: MovProyec
         <h2 className="con-icono">
           <Package size={20} /> Lista de compras
         </h2>
-        <Link className="boton pequeno" to={`/m/finanzas/importar?destino=proyecto&proyecto=${proyecto.id}`}>
-          <FileSpreadsheet size={14} /> Importar desde Excel
-        </Link>
+        {editar && (
+          <Link className="boton pequeno" to={`/m/finanzas/importar?destino=proyecto&proyecto=${proyecto.id}`}>
+            <FileSpreadsheet size={14} /> Importar desde Excel
+          </Link>
+        )}
       </div>
       <div className="tabla-envoltura">
         <table className="tabla">
@@ -473,24 +485,29 @@ function Compras({ proyecto, compras }: { proyecto: Proyecto; compras: MovProyec
                 <td>
                   {c.comprado ? (
                     <span className="chip chip-exito">Comprado {formatoCorto(c.fecha)}</span>
-                  ) : (
+                  ) : editar ? (
                     <button className="boton pequeno" onClick={() => setComprando(c)}>
                       <CheckCircle2 size={14} /> Marcar comprado
                     </button>
+                  ) : (
+                    <span className="chip">Por comprar</span>
                   )}
                 </td>
                 <td className="acciones-fila">
-                  {c.comprado && !c.bienId && (
+                  {editar && c.comprado && !c.bienId && (
                     <button className="boton pequeno" onClick={() => aInventario(c)} title="Registrar en el inventario de bienes">
                       → Inventario
                     </button>
                   )}
-                  {c.bienId && (
-                    <Link className="chip" to="/m/finanzas/inventario">
-                      En inventario
-                    </Link>
-                  )}
-                  {puede('pastor') && (
+                  {c.bienId &&
+                    (editar ? (
+                      <Link className="chip" to="/m/finanzas/inventario">
+                        En inventario
+                      </Link>
+                    ) : (
+                      <span className="chip">En inventario</span>
+                    ))}
+                  {editar && (
                     <button className="icono-boton peligro" title="Quitar" onClick={() => confirm(`¿Quitar "${c.descripcion}"?`) && borrarDoc(`${RUTA_MOV_PROYECTOS}/${c.id}`)}>
                       <Trash2 size={15} />
                     </button>
@@ -525,6 +542,7 @@ function Compras({ proyecto, compras }: { proyecto: Proyecto; compras: MovProyec
         </table>
       </div>
       {comprando && <MarcarComprado compra={comprando} proyecto={proyecto} alTerminar={() => setComprando(null)} />}
+      {editar && (
       <form className="fila" onSubmit={agregar}>
         <label>
           Artículo
@@ -546,6 +564,7 @@ function Compras({ proyecto, compras }: { proyecto: Proyecto; compras: MovProyec
           <Plus size={16} /> Agregar
         </button>
       </form>
+      )}
       {aviso && <div className="exito">{aviso}</div>}
       {error && <div className="error">{error}</div>}
     </section>
@@ -621,7 +640,8 @@ function MarcarComprado({ compra, proyecto, alTerminar }: { compra: MovProyecto;
 /* ================= Fondos ================= */
 
 function Fondos({ proyecto, ingresos, aportes }: { proyecto: Proyecto; ingresos: MovProyecto[]; aportes: Pago[] }) {
-  const { perfil, puede } = useSesion();
+  const { perfil } = useSesion();
+  const editar = useAdminFinanzas();
   const [fecha, setFecha] = useState(hoyISO());
   const [origen, setOrigen] = useState(ORIGENES_FONDOS[0]);
   const [persona, setPersona] = useState('');
@@ -664,7 +684,11 @@ function Fondos({ proyecto, ingresos, aportes }: { proyecto: Proyecto; ingresos:
 
   const filas = [
     ...ingresos.map((i) => ({ id: i.id, fecha: i.fecha, origen: i.origen || i.descripcion, persona: i.persona || '', monto: i.monto, comprobante: i.comprobante, borrable: true })),
-    ...aportes.map((a) => ({ id: a.id, fecha: a.fecha, origen: 'Aporte de diácono', persona: a.diaconoNombre, monto: a.monto, comprobante: a.comprobante, borrable: false })),
+    ...aportes.map((a) =>
+      a.id.startsWith('total:')
+        ? { id: a.id, fecha: '', origen: 'Aportes de los diáconos (total)', persona: '', monto: a.monto, comprobante: undefined, borrable: false }
+        : { id: a.id, fecha: a.fecha, origen: 'Aporte de diácono', persona: a.diaconoNombre, monto: a.monto, comprobante: a.comprobante, borrable: false },
+    ),
   ].sort((a, b) => b.fecha.localeCompare(a.fecha));
 
   return (
@@ -688,7 +712,7 @@ function Fondos({ proyecto, ingresos, aportes }: { proyecto: Proyecto; ingresos:
           <tbody>
             {filas.map((f) => (
               <tr key={f.id}>
-                <td>{formatoCorto(f.fecha)}</td>
+                <td>{f.fecha ? formatoCorto(f.fecha) : '—'}</td>
                 <td>
                   {f.origen}
                   {f.comprobante && (
@@ -700,7 +724,7 @@ function Fondos({ proyecto, ingresos, aportes }: { proyecto: Proyecto; ingresos:
                 <td>{f.persona || '—'}</td>
                 <td className="num">{dinero(f.monto)}</td>
                 <td>
-                  {f.borrable && puede('pastor') && (
+                  {f.borrable && editar && (
                     <button className="icono-boton peligro" title="Quitar" onClick={() => confirm('¿Quitar este ingreso?') && borrarDoc(`${RUTA_MOV_PROYECTOS}/${f.id}`)}>
                       <Trash2 size={15} />
                     </button>
@@ -718,6 +742,7 @@ function Fondos({ proyecto, ingresos, aportes }: { proyecto: Proyecto; ingresos:
           </tbody>
         </table>
       </div>
+      {editar && (
       <form className="fila" onSubmit={agregar}>
         <label>
           Fecha
@@ -747,6 +772,7 @@ function Fondos({ proyecto, ingresos, aportes }: { proyecto: Proyecto; ingresos:
           <Plus size={16} /> {ocupado ? 'Guardando…' : 'Registrar'}
         </button>
       </form>
+      )}
       {error && <div className="error">{error}</div>}
     </section>
   );

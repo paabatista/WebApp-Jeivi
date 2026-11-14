@@ -2114,3 +2114,16 @@ tr.omitida td {
     height: 36px;
   }
 }
+
+/* Check dentro de una tabla (ej. "Lleva finanzas" en Usuarios) */
+.check-tabla {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  font-weight: 400;
+  margin: 0;
+}
+.check-tabla input {
+  width: auto;
+}

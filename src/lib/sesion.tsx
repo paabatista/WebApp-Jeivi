@@ -24,6 +24,8 @@ export interface Perfil {
   iglesiaId: string;
   rol: Rol;
   whatsapp?: string;
+  /** Diácono a quien la pastora le delegó Finanzas (importar, exportar, cargos, aportes, gastos, proyectos…). */
+  encargadoFinanzas?: boolean;
   /** Recibir la lectura diaria por correo. */
   suscritoCorreo?: boolean;
   creado: string;

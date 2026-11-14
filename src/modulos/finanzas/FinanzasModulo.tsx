@@ -42,15 +42,23 @@ import { Importar } from './importar/Importar';
 import { DetalleProyecto, Proyectos } from './proyectos/Proyectos';
 import { Inventario } from './proyectos/Inventario';
 import { ListaActividad } from '../historial/HistorialModulo';
+import { useAdminFinanzas } from './permisos';
+import { totalesFinanzas, type TotalesFinanzas } from './totales';
+import { llamarApi } from '../../lib/api';
+import { MODO_DEMO } from '../../lib/datos';
 
 const modulo = moduloPorId('finanzas')!;
 
 export function FinanzasModulo() {
   const { perfil, puede } = useSesion();
+  const admin = useAdminFinanzas();
   const pestanas: Pestana[] = [{ a: '/m/finanzas', texto: 'Mi cuenta', fin: true }];
-  const reportes = useReportes(puede('pastor') ? undefined : null);
+  const reportes = useReportes(admin ? undefined : null);
   const porRevisar = (reportes || []).filter((r) => r.estado === 'pendiente').length;
-  if (puede('pastor')) {
+  if (!admin) {
+    // Diáconos que no llevan las finanzas: solo totales y proyectos (para mirar).
+    pestanas.push({ a: '/m/finanzas/resumen', texto: 'Resumen' }, { a: '/m/finanzas/proyectos', texto: 'Proyectos' });
+  } else {
     pestanas.push(
       { a: '/m/finanzas/resumen', texto: 'Resumen' },
       { a: '/m/finanzas/cargos', texto: 'Cargos' },
@@ -60,20 +68,160 @@ export function FinanzasModulo() {
       { a: '/m/finanzas/inventario', texto: 'Inventario' },
       { a: '/m/finanzas/conceptos', texto: 'Conceptos' },
       { a: '/m/finanzas/importar', texto: 'Importar Excel' },
-      { a: '/m/finanzas/historial', texto: 'Historial' },
     );
+    if (puede('pastor')) pestanas.push({ a: '/m/finanzas/historial', texto: 'Historial' });
   }
   return (
     <Layout modulo={modulo} pestanas={pestanas}>
       <Routes>
         <Route index element={perfil ? <MiEstadoCuenta uid={perfil.uid} propia /> : null} />
-        <Route path="*" element={puede('pastor') ? <AdminFinanzas /> : <Navigate to="/m/finanzas" replace />} />
+        <Route path="*" element={admin ? <AdminFinanzas /> : <FinanzasDiacono />} />
       </Routes>
     </Layout>
   );
 }
 
-/* ================= Datos para pastores ================= */
+/* ================= Diáconos que no llevan las finanzas: solo totales ================= */
+
+/** Totales de la iglesia (sin nombres). En la app publicada los calcula el servidor; en el modo demo, aquí. */
+function useTotales(periodo: string): { t: TotalesFinanzas | null; error: string } {
+  const [t, setT] = useState<TotalesFinanzas | null>(null);
+  const [error, setError] = useState('');
+  useEffect(() => {
+    setT(null);
+    setError('');
+    if (MODO_DEMO) {
+      let c: Cargo[] = [];
+      let p: Pago[] = [];
+      let g: Gasto[] = [];
+      const listos = new Set<string>();
+      const calcular = (k: string) => {
+        listos.add(k);
+        if (listos.size === 3) setT(totalesFinanzas(c, p, g, periodo));
+      };
+      const fs = [
+        escucharColeccion<Cargo>(RUTA_CARGOS, (d) => {
+          c = d;
+          calcular('c');
+        }),
+        escucharColeccion<Pago>(RUTA_PAGOS, (d) => {
+          p = d;
+          calcular('p');
+        }),
+        escucharColeccion<Gasto>(RUTA_GASTOS, (d) => {
+          g = d;
+          calcular('g');
+        }),
+      ];
+      return () => fs.forEach((f) => f());
+    }
+    let vivo = true;
+    llamarApi<TotalesFinanzas>('/api/finanzas-resumen', { periodo })
+      .then((r) => vivo && setT(r))
+      .catch((e) => vivo && setError(explicarError(e)));
+    return () => {
+      vivo = false;
+    };
+  }, [periodo]);
+  return { t, error };
+}
+
+function FinanzasDiacono() {
+  const { t, error } = useTotales(periodoActual());
+  // Los proyectos solo reciben el total aportado por concepto (sin decir quién).
+  const d = useMemo(
+    () =>
+      t
+        ? {
+            conceptos: [] as Concepto[],
+            pagos: Object.entries(t.aportesPorConcepto).map(
+              ([conceptoId, monto]) => ({ id: `total:${conceptoId}`, conceptoId, monto, fecha: '', diaconoUid: '', diaconoNombre: 'Aportes de los diáconos' }) as unknown as Pago,
+            ),
+          }
+        : null,
+    [t],
+  );
+  const espera = error ? <div className="error">{error}</div> : <Cargando />;
+  return (
+    <Routes>
+      <Route path="resumen" element={<ResumenGeneral />} />
+      <Route path="proyectos" element={d ? <Proyectos d={d} /> : espera} />
+      <Route path="proyectos/:id" element={d ? <DetalleProyecto d={d} /> : espera} />
+      <Route path="*" element={<Navigate to="/m/finanzas" replace />} />
+    </Routes>
+  );
+}
+
+function ResumenGeneral() {
+  const [periodo, setPeriodo] = useState(periodoActual());
+  const { t, error } = useTotales(periodo);
+  return (
+    <div className="pila">
+      <div className="tarjeta fila-entre">
+        <SelectorPeriodo periodo={periodo} setPeriodo={setPeriodo} />
+        <p className="suave pequeno">Totales de la iglesia. Tu detalle está en “Mi cuenta”.</p>
+      </div>
+      {error && <div className="error">{error}</div>}
+      {!t && !error && <Cargando />}
+      {t && (
+        <>
+          <div className="kpis">
+            <div className="tarjeta kpi">
+              <span>Gastos de {textoPeriodo(periodo)}</span>
+              <strong>{dinero(t.gastos)}</strong>
+            </div>
+            <div className="tarjeta kpi">
+              <span>Aportes recibidos en {textoPeriodo(periodo)}</span>
+              <strong className="texto-exito">{dinero(t.aportes)}</strong>
+            </div>
+            <div className="tarjeta kpi">
+              <span>Asignado a diáconos en {textoPeriodo(periodo)}</span>
+              <strong>{dinero(t.asignado)}</strong>
+            </div>
+            <div className="tarjeta kpi">
+              <span>Pendiente total por cobrar</span>
+              <strong className={t.pendiente > 0 ? 'texto-error' : 'texto-exito'}>{dinero(t.pendiente)}</strong>
+            </div>
+          </div>
+          <section className="tarjeta">
+            <h2>Por concepto · {textoPeriodo(periodo)}</h2>
+            <div className="tabla-envoltura">
+              <table className="tabla">
+                <thead>
+                  <tr>
+                    <th>Concepto</th>
+                    <th>Gastos</th>
+                    <th>Asignado</th>
+                    <th>Aportado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {t.conceptos.map((c) => (
+                    <tr key={c.nombre}>
+                      <td>{c.nombre}</td>
+                      <td>{dinero(c.gastos)}</td>
+                      <td>{dinero(c.asignado)}</td>
+                      <td>{dinero(c.aportado)}</td>
+                    </tr>
+                  ))}
+                  {!t.conceptos.length && (
+                    <tr>
+                      <td colSpan={4} className="suave">
+                        Sin movimientos este mes.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ================= Datos para pastores y encargadas de finanzas ================= */
 
 function useFinanzas() {
   const [conceptos, setConceptos] = useState<Concepto[] | null>(null);
@@ -97,6 +245,7 @@ function useFinanzas() {
 type DatosFin = NonNullable<ReturnType<typeof useFinanzas>>;
 
 function AdminFinanzas() {
+  const { puede } = useSesion();
   const d = useFinanzas();
   if (!d) return <Cargando />;
   return (
@@ -110,7 +259,7 @@ function AdminFinanzas() {
       <Route path="proyectos" element={<Proyectos d={d} />} />
       <Route path="proyectos/:id" element={<DetalleProyecto d={d} />} />
       <Route path="inventario" element={<Inventario />} />
-      <Route path="historial" element={<ListaActividad soloModulo="finanzas" />} />
+      {puede('pastor') && <Route path="historial" element={<ListaActividad soloModulo="finanzas" />} />}
       <Route path="*" element={<Navigate to="/m/finanzas" replace />} />
     </Routes>
   );

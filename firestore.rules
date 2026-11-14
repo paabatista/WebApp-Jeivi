@@ -19,6 +19,10 @@ service cloud.firestore {
     function miNivel() { return autenticado() && exists(rutaYo()) ? nivel(yo().rol) : 0; }
     function deMiIglesia(ig) { return autenticado() && exists(rutaYo()) && yo().iglesiaId == ig; }
     function equipo(ig, minimo) { return deMiIglesia(ig) && miNivel() >= minimo; }
+    // Administra Finanzas: pastor/super admin, o un diácono marcado como "Lleva finanzas" por un pastor.
+    function finAdmin(ig) {
+      return equipo(ig, 80) || (equipo(ig, 50) && yo().rol == 'diacono' && yo().get('encargadoFinanzas', false) == true);
+    }
 
     // Un link público es válido si existe, está activo y es del módulo indicado.
     function enlaceValido(ig, token, modulo) {
@@ -33,7 +37,8 @@ service cloud.firestore {
     match /users/{uid} {
       allow read: if autenticado() && (
         request.auth.uid == uid ||
-        (miNivel() >= 80 && resource.data.iglesiaId == yo().iglesiaId)
+        ((miNivel() >= 80 || (miNivel() >= 50 && yo().get('encargadoFinanzas', false) == true))
+          && resource.data.iglesiaId == yo().iglesiaId)
       );
 
       // Solo por invitación: el perfil se crea con el rol y la iglesia de la invitación,
@@ -50,17 +55,18 @@ service cloud.firestore {
         && request.resource.data.iglesiaId == get(rutaInvitacion(miCorreo())).data.iglesiaId;
 
       allow update: if autenticado() && (
-        // El propio usuario: nombre, WhatsApp, suscripción… pero no su rol ni su iglesia.
+        // El propio usuario: nombre, WhatsApp, suscripción… pero no su rol, su iglesia ni si lleva finanzas.
         (request.auth.uid == uid
-          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['rol', 'iglesiaId', 'uid', 'email']))
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['rol', 'iglesiaId', 'uid', 'email', 'encargadoFinanzas']))
         ||
-        // Pastores y super admin: solo cambian el rol de alguien de nivel inferior, a un nivel inferior al suyo.
+        // Pastores y super admin: solo cambian el rol (y "lleva finanzas") de alguien de nivel inferior, a un nivel inferior al suyo.
         (miNivel() >= 80
           && request.auth.uid != uid
           && resource.data.iglesiaId == yo().iglesiaId
           && nivel(resource.data.rol) < miNivel()
           && nivel(request.resource.data.rol) < miNivel()
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rol']))
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rol', 'encargadoFinanzas'])
+          && (!('encargadoFinanzas' in request.resource.data) || request.resource.data.encargadoFinanzas is bool))
       );
 
       // Solo el super admin borra usuarios; nunca a sí mismo ni a otro super admin.
@@ -232,21 +238,22 @@ service cloud.firestore {
       // ----- Finanzas -----
       match /finConceptos/{id} {
         allow read: if equipo(ig, 50);
-        allow write: if equipo(ig, 80);
+        allow write: if finAdmin(ig);
       }
-      // Cada diácono solo ve SUS cargos y aportes; los pastores ven todo.
+      // Cada diácono solo ve SUS cargos y aportes; los pastores y quienes llevan finanzas ven todo.
+      // (El resumen con totales para los demás diáconos lo calcula /api/finanzas-resumen, sin nombres.)
       match /finCargos/{id} {
-        allow read: if deMiIglesia(ig) && (miNivel() >= 80 || resource.data.diaconoUid == request.auth.uid);
-        allow write: if equipo(ig, 80);
+        allow read: if deMiIglesia(ig) && (finAdmin(ig) || resource.data.diaconoUid == request.auth.uid);
+        allow write: if finAdmin(ig);
       }
       match /finPagos/{id} {
-        allow read: if deMiIglesia(ig) && (miNivel() >= 80 || resource.data.diaconoUid == request.auth.uid);
-        allow write: if equipo(ig, 80);
+        allow read: if deMiIglesia(ig) && (finAdmin(ig) || resource.data.diaconoUid == request.auth.uid);
+        allow write: if finAdmin(ig);
       }
       // Pagos que reporta el propio diácono: siempre con comprobante, quedan "pendiente"
       // hasta que un pastor los confirma (ahí se crea el aporte en finPagos) o los rechaza.
       match /finReportes/{id} {
-        allow read: if deMiIglesia(ig) && (miNivel() >= 80 || resource.data.diaconoUid == request.auth.uid);
+        allow read: if deMiIglesia(ig) && (finAdmin(ig) || resource.data.diaconoUid == request.auth.uid);
         allow create: if equipo(ig, 50)
           && request.resource.data.diaconoUid == request.auth.uid
           && request.resource.data.estado == 'pendiente'
@@ -254,21 +261,24 @@ service cloud.firestore {
           && request.resource.data.fecha is string && request.resource.data.fecha.size() == 10
           && request.resource.data.comprobante.url is string && request.resource.data.comprobante.url.size() > 10
           && !('pagoId' in request.resource.data) && !('revisadoPor' in request.resource.data);
-        allow update: if equipo(ig, 80);
-        allow delete: if equipo(ig, 80) || (deMiIglesia(ig) && resource.data.diaconoUid == request.auth.uid && resource.data.estado == 'pendiente');
+        allow update: if finAdmin(ig);
+        allow delete: if finAdmin(ig) || (deMiIglesia(ig) && resource.data.diaconoUid == request.auth.uid && resource.data.estado == 'pendiente');
       }
       match /finGastos/{id} {
-        allow read, write: if equipo(ig, 80);
+        allow read, write: if finAdmin(ig);
       }
-      // Proyectos e inversiones (no son gastos corrientes) e inventario de bienes: pastores y super admin.
+      // Proyectos e inversiones (no son gastos corrientes): todos los diáconos los ven; editan quienes llevan finanzas.
       match /finProyectos/{id} {
-        allow read, write: if equipo(ig, 80);
+        allow read: if equipo(ig, 50);
+        allow write: if finAdmin(ig);
       }
       match /finProyectoMovs/{id} {
-        allow read, write: if equipo(ig, 80);
+        allow read: if equipo(ig, 50);
+        allow write: if finAdmin(ig);
       }
+      // Inventario de bienes: pastores y quienes llevan finanzas.
       match /bienes/{id} {
-        allow read, write: if equipo(ig, 80);
+        allow read, write: if finAdmin(ig);
       }
     }
   }
