@@ -164,90 +164,102 @@ export function dibujarBanner(ctx: CanvasRenderingContext2D, o: OpcionesBanner) 
   const anchoLinea = w * 0.12;
   ctx.fillRect(alinear === 'left' ? margen : (w - anchoLinea) / 2, yCab, anchoLinea, Math.max(4, w * 0.004));
 
-  // 3. Bloques centrales
-  const bloques: Bloque[] = [];
-  const espacio = h * 0.025;
-
-  if (o.etiqueta) {
-    ctx.font = `700 ${Math.round(w * 0.026)}px ${FUENTE_TEXTO}`;
-    const t = w * 0.026;
-    bloques.push({
-      alto: t * 1.3,
-      pintar: (y) => {
-        ctx.font = `700 ${Math.round(t)}px ${FUENTE_TEXTO}`;
-        ctx.fillStyle = col.etiqueta;
-        conSombra(() => ctx.fillText(o.etiqueta.toUpperCase(), xTexto, y));
-      },
-    });
-  }
-
-  if (o.titulo) {
-    const t = w * 0.075;
-    bloques.push({
-      alto: t * 1.25,
-      pintar: (y) => {
-        ctx.font = `italic 700 ${Math.round(t)}px ${FUENTE_TITULO}`;
-        ctx.fillStyle = col.titulo;
-        conSombra(() => ctx.fillText(o.titulo, xTexto, y));
-      },
-    });
-  }
-
-  // La lectura: cada pasaje separado por coma va en su propia línea si cabe.
+  // 3. Bloques centrales: tienen que caber entre la cabecera y el pie, sin montarse.
+  // Si no caben, primero se achica la lectura y luego todo lo demás, hasta que cada sección quepa en su lugar.
+  const padTarjeta = enTarjeta ? w * 0.06 : 0;
+  const zonaInicio = yCab + h * 0.04 + padTarjeta;
+  const zonaFin = h - h * 0.1 - padTarjeta;
+  const disponible = zonaFin - zonaInicio;
   const textoLectura = o.separarComas === false ? o.lectura : o.lectura.split(/\s*,\s*/).join('\n');
-  const maxL = o.plantilla === 'minimal' ? 5 : 6;
-  const { tamano, lineas } = ajustar(
-    ctx,
-    textoLectura,
-    (t) => `800 ${Math.round(t)}px ${FUENTE_TEXTO}`,
-    anchoTexto,
-    w * 0.115,
-    w * 0.045,
-    maxL,
-  );
-  bloques.push({
-    alto: lineas.length * tamano * 1.12,
-    pintar: (y) => {
-      ctx.font = `800 ${Math.round(tamano)}px ${FUENTE_TEXTO}`;
-      ctx.fillStyle = col.lectura;
-      conSombra(() => lineas.forEach((l, i) => ctx.fillText(l, xTexto, y + i * tamano * 1.12)));
-    },
-  });
 
-  if (o.nota) {
-    const res = ajustar(ctx, `“${o.nota}”`, (t) => `italic 400 ${Math.round(t)}px ${FUENTE_TITULO}`, anchoTexto, w * 0.042, w * 0.028, 6);
+  let medida = bloquesCentrales(1, 1);
+  for (let sL = 0.95; medida.altoTotal > disponible && sL >= 0.4; sL -= 0.05) medida = bloquesCentrales(sL, 1);
+  for (let sR = 0.95; medida.altoTotal > disponible && sR >= 0.55; sR -= 0.05) medida = bloquesCentrales(0.4, sR);
+  const { bloques, altoTotal, espacio } = medida;
+
+  /** Arma los bloques con la lectura a escala `sL` y el resto (etiqueta, título, nota, fecha) a escala `sR`. */
+  function bloquesCentrales(sL: number, sR: number): { bloques: Bloque[]; altoTotal: number; espacio: number } {
+    const bloques: Bloque[] = [];
+    const espacio = h * 0.025 * sR;
+
+    if (o.etiqueta) {
+      const t = w * 0.026 * sR;
+      bloques.push({
+        alto: t * 1.3,
+        pintar: (y) => {
+          ctx.font = `700 ${Math.round(t)}px ${FUENTE_TEXTO}`;
+          ctx.fillStyle = col.etiqueta;
+          conSombra(() => ctx.fillText(o.etiqueta.toUpperCase(), xTexto, y));
+        },
+      });
+    }
+
+    if (o.titulo) {
+      const t = w * 0.075 * sR;
+      bloques.push({
+        alto: t * 1.25,
+        pintar: (y) => {
+          ctx.font = `italic 700 ${Math.round(t)}px ${FUENTE_TITULO}`;
+          ctx.fillStyle = col.titulo;
+          conSombra(() => ctx.fillText(o.titulo, xTexto, y));
+        },
+      });
+    }
+
+    // La lectura: cada pasaje separado por coma va en su propia línea si cabe.
+    const maxL = o.plantilla === 'minimal' ? 7 : 8;
+    const { tamano, lineas } = ajustar(
+      ctx,
+      textoLectura,
+      (t) => `800 ${Math.round(t)}px ${FUENTE_TEXTO}`,
+      anchoTexto,
+      w * 0.115 * sL,
+      w * 0.045 * sL,
+      maxL,
+    );
     bloques.push({
-      alto: res.lineas.length * res.tamano * 1.35,
+      alto: lineas.length * tamano * 1.12,
       pintar: (y) => {
-        ctx.font = `italic 400 ${Math.round(res.tamano)}px ${FUENTE_TITULO}`;
-        ctx.fillStyle = col.nota;
-        conSombra(() => res.lineas.forEach((l, i) => ctx.fillText(l, xTexto, y + i * res.tamano * 1.35)));
+        ctx.font = `800 ${Math.round(tamano)}px ${FUENTE_TEXTO}`;
+        ctx.fillStyle = col.lectura;
+        conSombra(() => lineas.forEach((l, i) => ctx.fillText(l, xTexto, y + i * tamano * 1.12)));
       },
     });
+
+    if (o.nota) {
+      const res = ajustar(ctx, `“${o.nota}”`, (t) => `italic 400 ${Math.round(t)}px ${FUENTE_TITULO}`, anchoTexto, w * 0.042 * sR, w * 0.028 * sR, 5);
+      bloques.push({
+        alto: res.lineas.length * res.tamano * 1.35,
+        pintar: (y) => {
+          ctx.font = `italic 400 ${Math.round(res.tamano)}px ${FUENTE_TITULO}`;
+          ctx.fillStyle = col.nota;
+          conSombra(() => res.lineas.forEach((l, i) => ctx.fillText(l, xTexto, y + i * res.tamano * 1.35)));
+        },
+      });
+    }
+
+    if (o.fecha) {
+      const t = w * 0.032 * sR;
+      bloques.push({
+        alto: t * 1.3,
+        pintar: (y) => {
+          ctx.font = `500 ${Math.round(t)}px ${FUENTE_TEXTO}`;
+          ctx.fillStyle = col.fecha;
+          conSombra(() => ctx.fillText(o.fecha, xTexto, y));
+        },
+      });
+    }
+
+    return { bloques, espacio, altoTotal: bloques.reduce((s, b) => s + b.alto, 0) + espacio * (bloques.length - 1) };
   }
 
-  if (o.fecha) {
-    const t = w * 0.032;
-    bloques.push({
-      alto: t * 1.3,
-      pintar: (y) => {
-        ctx.font = `500 ${Math.round(t)}px ${FUENTE_TEXTO}`;
-        ctx.fillStyle = col.fecha;
-        conSombra(() => ctx.fillText(o.fecha, xTexto, y));
-      },
-    });
-  }
-
-  const altoTotal = bloques.reduce((s, b) => s + b.alto, 0) + espacio * (bloques.length - 1);
-  const zonaInicio = yCab + h * 0.04;
-  const zonaFin = h - h * 0.1;
   let y =
     o.plantilla === 'minimal'
       ? Math.max(zonaInicio, zonaFin - altoTotal - h * 0.02)
-      : zonaInicio + Math.max(0, (zonaFin - zonaInicio - altoTotal) / 2);
+      : zonaInicio + Math.max(0, (disponible - altoTotal) / 2);
 
   if (enTarjeta) {
-    const pad = w * 0.06;
+    const pad = padTarjeta;
     ctx.save();
     ctx.shadowColor = 'rgba(0,0,0,0.3)';
     ctx.shadowBlur = 40;
